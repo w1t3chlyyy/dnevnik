@@ -1,39 +1,190 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg: #FAFAFA;
-  --fg: #0A0A0A;
+  --bg: #08080a;
+  --bg-soft: #0e0e11;
+  --ink: #f5f5f3;
+  --ink-dim: rgba(245, 245, 243, 0.58);
+  --ink-faint: rgba(245, 245, 243, 0.36);
+  --line: rgba(245, 245, 243, 0.13);
+  --line-strong: rgba(245, 245, 243, 0.26);
+  --glass: rgba(245, 245, 243, 0.055);
+  --glass-strong: rgba(245, 245, 243, 0.095);
+  --white: #ffffff;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: var(--bg);
 }
 
 body {
   background: var(--bg);
-  color: var(--fg);
-  font-family: 'Inter', -apple-system, sans-serif;
+  color: var(--ink);
+  font-family: "Inter", -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+  min-height: 100vh;
 }
 
-/* Никаких цветных акцентов — только контраст, толщина линии и типографика */
-.card {
-  border: 1px solid var(--fg);
-  border-radius: 0;
-  padding: 16px;
+.font-display {
+  font-family: "Fraunces", Georgia, serif;
+  font-optical-sizing: auto;
+}
+
+.font-mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- surfaces ---------- */
+
+.glass {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-strong {
+  background: var(--glass-strong);
+  border: 1px solid var(--line-strong);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.hairline {
+  border-color: var(--line);
+}
+
+/* faint diagonal sheen along the top edge of a glass slab */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0) 30%
+  );
+}
+
+/* ---------- ambient background ---------- */
+
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
   background: var(--bg);
 }
 
+.ambient-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(70px);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 70%);
+  will-change: transform;
+}
+
+.ambient-orb-a {
+  width: 420px;
+  height: 420px;
+  top: -120px;
+  left: -100px;
+  animation: drift-a 26s ease-in-out infinite;
+}
+
+.ambient-orb-b {
+  width: 360px;
+  height: 360px;
+  bottom: -80px;
+  right: -120px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 70%);
+  animation: drift-b 32s ease-in-out infinite;
+}
+
+.ambient-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background-image: linear-gradient(rgba(245, 245, 243, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 245, 243, 0.035) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(circle at 50% 0%, black 0%, transparent 75%);
+}
+
+.ambient-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+}
+
+@keyframes drift-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(40px, 60px); }
+}
+
+@keyframes drift-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-30px, -50px); }
+}
+
+/* ---------- entrance choreography ---------- */
+
+.rise-in {
+  animation: rise-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- misc ---------- */
+
 .progress-track {
-  height: 6px;
-  background: #E5E5E5;
+  height: 3px;
+  background: var(--line);
   width: 100%;
+  overflow: hidden;
 }
 .progress-fill {
-  height: 6px;
-  background: var(--fg);
+  height: 3px;
+  background: var(--white);
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nav-item {
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+::selection {
+  background: rgba(245, 245, 243, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in, .ambient-orb-a, .ambient-orb-b {
+    animation: none !important;
+  }
+  .progress-fill {
+    transition: none !important;
+  }
 }

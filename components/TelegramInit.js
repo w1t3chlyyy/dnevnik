@@ -6,9 +6,11 @@ export default function TelegramInit() {
     const script = document.createElement("script");
     script.src = "https://telegram.org/js/telegram-web-app.js";
     script.onload = () => {
-      window.Telegram?.WebApp?.ready();
-      window.Telegram?.WebApp?.expand();
-      window.Telegram?.WebApp?.setHeaderColor("#0A0A0A");
+      const webApp = window.Telegram?.WebApp;
+      webApp?.ready();
+      webApp?.expand();
+      webApp?.setHeaderColor("#08080a");
+      webApp?.setBackgroundColor("#08080a");
     };
     document.head.appendChild(script);
   }, []);
