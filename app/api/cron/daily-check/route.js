@@ -1,9 +1,15 @@
 import { supabaseAdmin as db } from "@/lib/supabase";
 import { Bot } from "grammy";
 
-// Настраивается в vercel.json как Cron Job (напр. раз в час),
-// сверяет cron_time каждого пользователя с текущим временем.
-export async function GET() {
+// Настраивается через внешний планировщик (например cron-job.org), т.к.
+// Vercel Hobby позволяет только 1 запуск cron в сутки.
+// Защищено секретом: вызывающий должен передать ?secret=CRON_SECRET
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  if (searchParams.get("secret") !== process.env.CRON_SECRET) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN);
   const now = new Date();
   const hhmm = now.toISOString().slice(11, 16);
