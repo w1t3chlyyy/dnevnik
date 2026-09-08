@@ -94,6 +94,35 @@ export function IconPlus({ size = 18, className = "" }) {
   );
 }
 
+export function IconTrophy({ size = 20, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M8 4h8v5.5a4 4 0 0 1-8 0V4Z" />
+      <path d="M8 5.5H5a2.5 2.5 0 0 0 2.5 2.5" />
+      <path d="M16 5.5h3a2.5 2.5 0 0 1-2.5 2.5" />
+      <path d="M12 13.5V17" />
+      <path d="M9 20h6" />
+      <path d="M10 17h4l.6 3H9.4l.6-3Z" />
+    </svg>
+  );
+}
+
+export function IconClose({ size = 18, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+export function IconMinus({ size = 18, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
 export function IconAlert({ size = 20, className = "" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>

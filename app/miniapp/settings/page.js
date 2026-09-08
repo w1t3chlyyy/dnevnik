@@ -64,7 +64,7 @@ export default function SettingsPage() {
 
       <GlassPanel strong className="p-5" delay={80}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center border border-white/20 shrink-0">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center border border-white/20 shrink-0">
             <IconCloud size={18} className="text-white/70" />
           </div>
           <div className="flex-1 min-w-0">
@@ -88,7 +88,7 @@ export default function SettingsPage() {
         <button
           onClick={user?.driveConnected ? handleDisconnect : handleConnect}
           disabled={busy || loading}
-          className="mt-4 w-full py-3 text-sm border border-white/25 hover:bg-white/5 active:scale-[0.99] transition disabled:opacity-40"
+          className="mt-4 w-full py-3 text-sm rounded-2xl border border-white/25 hover:bg-white/5 active:scale-[0.99] transition disabled:opacity-40"
         >
           {user?.driveConnected ? "Отключить Google Drive" : "Подключить Google Drive"}
         </button>

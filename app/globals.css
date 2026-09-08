@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -13,12 +13,18 @@
   --line: rgba(245, 245, 243, 0.13);
   --line-strong: rgba(245, 245, 243, 0.26);
   --glass: rgba(245, 245, 243, 0.055);
-  --glass-strong: rgba(245, 245, 243, 0.095);
+  --glass-strong: rgba(245, 245, 243, 0.1);
   --white: #ffffff;
+  --accent: #8b7bff;
+  --accent-2: #5ee6c8;
+  --accent-3: #ff9f6e;
+  --radius-glass: 28px;
+  --radius-glass-sm: 20px;
 }
 
 * {
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
 html {
@@ -28,15 +34,15 @@ html {
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: "Inter", -apple-system, sans-serif;
+  font-family: "Montserrat", -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   position: relative;
   min-height: 100vh;
 }
 
 .font-display {
-  font-family: "Fraunces", Georgia, serif;
-  font-optical-sizing: auto;
+  font-family: "Unbounded", -apple-system, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .font-mono {
@@ -50,15 +56,32 @@ body {
   position: relative;
   background: var(--glass);
   border: 1px solid var(--line);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-glass);
+  backdrop-filter: blur(22px) saturate(130%);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  overflow: hidden;
+  transition: border-color 0.35s ease, background 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
 }
 
 .glass-strong {
   background: var(--glass-strong);
   border: 1px solid var(--line-strong);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  border-radius: var(--radius-glass);
+  backdrop-filter: blur(26px) saturate(140%);
+  -webkit-backdrop-filter: blur(26px) saturate(140%);
+  overflow: hidden;
+  box-shadow: 0 20px 60px -24px rgba(0, 0, 0, 0.55);
+}
+
+.glass-sm {
+  border-radius: var(--radius-glass-sm);
+}
+
+.glass-tap {
+  cursor: pointer;
+}
+.glass-tap:active {
+  transform: scale(0.985);
 }
 
 .hairline {
@@ -66,16 +89,28 @@ body {
 }
 
 /* faint diagonal sheen along the top edge of a glass slab */
-.glass::before {
+.glass::before,
+.glass-strong::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0) 30%
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0) 32%
   );
+}
+
+/* subtle inner border glow for extra glass depth */
+.glass::after,
+.glass-strong::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* ---------- ambient background ---------- */
@@ -92,7 +127,7 @@ body {
   position: absolute;
   border-radius: 999px;
   filter: blur(70px);
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 70%);
+  background: radial-gradient(circle, rgba(139, 123, 255, 0.22) 0%, rgba(139, 123, 255, 0) 70%);
   will-change: transform;
 }
 
@@ -105,18 +140,27 @@ body {
 }
 
 .ambient-orb-b {
-  width: 360px;
-  height: 360px;
+  width: 380px;
+  height: 380px;
   bottom: -80px;
   right: -120px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 70%);
+  background: radial-gradient(circle, rgba(94, 230, 200, 0.16) 0%, rgba(94, 230, 200, 0) 70%);
   animation: drift-b 32s ease-in-out infinite;
+}
+
+.ambient-orb-c {
+  width: 300px;
+  height: 300px;
+  top: 40%;
+  left: 50%;
+  background: radial-gradient(circle, rgba(255, 159, 110, 0.1) 0%, rgba(255, 159, 110, 0) 70%);
+  animation: drift-c 38s ease-in-out infinite;
 }
 
 .ambient-grid {
   position: absolute;
   inset: 0;
-  opacity: 0.5;
+  opacity: 0.4;
   background-image: linear-gradient(rgba(245, 245, 243, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(245, 245, 243, 0.035) 1px, transparent 1px);
   background-size: 34px 34px;
@@ -126,7 +170,7 @@ body {
 .ambient-grain {
   position: absolute;
   inset: 0;
-  opacity: 0.05;
+  opacity: 0.045;
   mix-blend-mode: overlay;
 }
 
@@ -140,35 +184,82 @@ body {
   50% { transform: translate(-30px, -50px); }
 }
 
+@keyframes drift-c {
+  0%, 100% { transform: translate(-50%, 0) scale(1); }
+  50% { transform: translate(-50%, -40px) scale(1.15); }
+}
+
 /* ---------- entrance choreography ---------- */
 
 .rise-in {
-  animation: rise-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(14px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
+}
+
+/* goal card exit — plays then the item unmounts */
+.goal-leaving {
+  animation: goal-complete 0.65s cubic-bezier(0.4, 0, 0.2, 1) both;
+  pointer-events: none;
+}
+
+@keyframes goal-complete {
+  0% { transform: scale(1); opacity: 1; }
+  30% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(0.82); opacity: 0; }
+}
+
+/* celebratory glow ring shown briefly on completion */
+.completion-glow {
+  position: absolute;
+  inset: -20%;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(94, 230, 200, 0.35) 0%, rgba(94, 230, 200, 0) 70%);
+  animation: ring-pulse 0.8s ease-out;
+  pointer-events: none;
 }
 
 /* ---------- misc ---------- */
 
 .progress-track {
-  height: 3px;
+  height: 6px;
+  border-radius: 999px;
   background: var(--line);
   width: 100%;
   overflow: hidden;
 }
 .progress-fill {
-  height: 3px;
-  background: var(--white);
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
   transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.progress-fill.is-done {
+  background: linear-gradient(90deg, var(--accent-2) 0%, #8ff7d8 100%);
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--ink-dim) 0%,
+    var(--white) 50%,
+    var(--ink-dim) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2.6s linear infinite;
 }
 
 .nav-item {
@@ -176,12 +267,30 @@ body {
   letter-spacing: 0.03em;
 }
 
+.chip {
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, transform 0.2s ease;
+}
+.chip:active {
+  transform: scale(0.96);
+}
+.chip.is-active {
+  border-color: rgba(139, 123, 255, 0.5);
+  background: linear-gradient(135deg, rgba(139, 123, 255, 0.22), rgba(94, 230, 200, 0.12));
+  color: var(--white);
+}
+
+.float-slow {
+  animation: float-slow 5s ease-in-out infinite;
+}
+
 ::selection {
-  background: rgba(245, 245, 243, 0.25);
+  background: rgba(139, 123, 255, 0.35);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rise-in, .ambient-orb-a, .ambient-orb-b {
+  .rise-in, .ambient-orb-a, .ambient-orb-b, .ambient-orb-c, .float-slow, .shimmer-text, .goal-leaving, .completion-glow {
     animation: none !important;
   }
   .progress-fill {

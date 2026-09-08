@@ -39,7 +39,7 @@ export default function ContactsPage() {
               className="p-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform"
               delay={i * 60}
             >
-              <div className="w-10 h-10 shrink-0 flex items-center justify-center border border-white/20 font-display text-sm">
+              <div className="w-10 h-10 rounded-2xl shrink-0 flex items-center justify-center border border-white/20 font-display text-sm">
                 {c.telegram_username?.[0]?.toUpperCase() || "?"}
               </div>
               <div className="flex-1 min-w-0">

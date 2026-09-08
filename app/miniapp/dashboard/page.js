@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiGet } from "@/lib/apiClient";
 import GlassPanel from "@/components/GlassPanel";
 import ProgressRing from "@/components/ProgressRing";
@@ -48,7 +49,7 @@ export default function Dashboard() {
           <div className="mt-3 h-px bg-white/10" />
           <p className="mt-3 text-xs text-white/35 leading-relaxed">
             {active.length
-              ? "Отмечай прогресс командой /progress в чате с ботом."
+              ? "Отмечай прогресс на вкладке «Цели» или командой /progress в боте."
               : "Создай первую цель командой /goal в чате с ботом."}
           </p>
         </div>
@@ -66,8 +67,8 @@ export default function Dashboard() {
           active.map((g, i) => {
             const value = pct(g);
             return (
-              <GlassPanel key={g.id} className="p-4" delay={120 + i * 70}>
-                <div className="flex items-center gap-4">
+              <GlassPanel key={g.id} as={Link} href="/miniapp/goals" className="p-4 flex glass-tap" delay={120 + i * 70}>
+                <div className="flex items-center gap-4 w-full">
                   <ProgressRing value={value} size={46} stroke={3.5} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">

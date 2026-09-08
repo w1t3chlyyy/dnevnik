@@ -4,6 +4,7 @@ export default function AmbientBackground() {
       <div className="ambient-grid" />
       <div className="ambient-orb ambient-orb-a" />
       <div className="ambient-orb ambient-orb-b" />
+      <div className="ambient-orb ambient-orb-c" />
       <svg className="ambient-grain" width="100%" height="100%">
         <filter id="grain">
           <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
