@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { InlineKeyboard } from "grammy";
 import { supabaseAdmin as db } from "@/lib/supabase";
 import bot from "@/lib/bot";
 import { isDueNow, localDateStr } from "@/lib/time";
@@ -6,9 +7,20 @@ import { buildDailyDigest } from "@/lib/digest";
 
 export const maxDuration = 60;
 
-// Во сколько по МСК слать вечерний итог. Можно переопределить через env,
-// не трогая код.
+// Во сколько по МСК слать вечерний итог и утреннюю мотивацию.
+// Можно переопределить через env, не трогая код.
 const DIGEST_TIME_MSK = process.env.DIGEST_TIME_MSK || "22:00";
+const MORNING_TIME_MSK = process.env.MORNING_TIME_MSK || "10:00";
+
+const MORNING_MESSAGES = [
+  "Доброе утро ☀️ Новый день — новые результаты. Какую цель поставишь на сегодня?",
+  "Утро доброе 🌤 Маленький шаг сегодня — заметный прогресс через месяц. Зафиксируем цель на день?",
+  "Привет! Сегодня отличный день, чтобы сдвинуть что-то важное с места. Есть цель на сегодня?",
+  "Доброе утро 🚀 Что одно действие сегодня приблизит тебя к главной цели?"
+];
+function pickMorningMessage() {
+  return MORNING_MESSAGES[Math.floor(Math.random() * MORNING_MESSAGES.length)];
+}
 
 // Простая защита эндпоинта: если задан CRON_SECRET — требуем его в
 // query (?secret=...) или в заголовке x-cron-secret / Authorization: Bearer.
@@ -28,7 +40,14 @@ export async function GET(req) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const results = { onceSent: 0, dailySent: 0, digestSent: 0, errors: [] };
+  const results = {
+    onceSent: 0,
+    dailySent: 0,
+    digestSent: 0,
+    morningSent: 0,
+    dailyGoalPrompts: 0,
+    errors: []
+  };
   const nowIso = new Date().toISOString();
   const today = localDateStr();
 
@@ -78,7 +97,28 @@ export async function GET(req) {
     results.errors.push(`daily-query:${e.message}`);
   }
 
-  // 3) Вечерний итог дня по всем пользователям
+  // 3) Утренняя мотивация + предложение поставить цель на день
+  try {
+    if (isDueNow(MORNING_TIME_MSK)) {
+      const { data: users, error } = await db.from("users").select("*");
+      if (error) throw error;
+      for (const user of users || []) {
+        if (user.last_morning_date === today) continue;
+        try {
+          const kb = new InlineKeyboard().text("🎯 Поставить цель на день", "daily_goal:new");
+          await bot.api.sendMessage(user.telegram_id, pickMorningMessage(), { reply_markup: kb });
+          await db.from("users").update({ last_morning_date: today }).eq("id", user.id);
+          results.morningSent++;
+        } catch (e) {
+          results.errors.push(`morning:${user.id}:${e.message}`);
+        }
+      }
+    }
+  } catch (e) {
+    results.errors.push(`morning-query:${e.message}`);
+  }
+
+  // 4) Вечерний итог дня по всем пользователям + отдельные карточки по целям дня
   try {
     if (isDueNow(DIGEST_TIME_MSK)) {
       const { data: users, error } = await db.from("users").select("*");
@@ -90,6 +130,35 @@ export async function GET(req) {
           await bot.api.sendMessage(user.telegram_id, text);
           await db.from("users").update({ last_digest_date: today }).eq("id", user.id);
           results.digestSent++;
+
+          // Отдельное сообщение с кнопками на каждую активную цель дня —
+          // чтобы можно было сразу отметить прогресс или закрыть её.
+          const { data: dailyGoals } = await db
+            .from("goals")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("is_daily", true)
+            .eq("goal_date", today)
+            .eq("status", "active");
+
+          for (const dg of dailyGoals || []) {
+            try {
+              const unit = dg.metric_unit ? ` ${dg.metric_unit}` : "";
+              const dkb = new InlineKeyboard()
+                .text("➕ Прогресс", `dgoal_progress:${dg.id}`)
+                .row()
+                .text("✅ Выполнено", `dgoal_close:done:${dg.id}`)
+                .text("❌ Не вышло", `dgoal_close:failed:${dg.id}`);
+              await bot.api.sendMessage(
+                user.telegram_id,
+                `Цель на сегодня: ${dg.title}\n${dg.current_value ?? 0}/${dg.target_value}${unit}`,
+                { reply_markup: dkb }
+              );
+              results.dailyGoalPrompts++;
+            } catch (e) {
+              results.errors.push(`dgoal-prompt:${dg.id}:${e.message}`);
+            }
+          }
         } catch (e) {
           results.errors.push(`digest:${user.id}:${e.message}`);
         }

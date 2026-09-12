@@ -36,14 +36,22 @@ function pctAt(cumByDate, dates, target) {
 }
 
 export default function ChartsPage() {
+  const [mode, setMode] = useState("goals"); // "goals" | "daily"
   const [goals, setGoals] = useState([]);
   const [selected, setSelected] = useState(ALL);
   const [loading, setLoading] = useState(true);
+
+  const [dailyDays, setDailyDays] = useState([]);
+  const [dailyLoading, setDailyLoading] = useState(true);
 
   useEffect(() => {
     apiGet("/api/goals").then((d) => {
       setGoals(d.goals || []);
       setLoading(false);
+    });
+    apiGet("/api/goals/daily").then((d) => {
+      setDailyDays(d.days || []);
+      setDailyLoading(false);
     });
   }, []);
 
@@ -61,7 +69,7 @@ export default function ChartsPage() {
       }, []);
   }, [goal]);
 
-  // ---------- агрегированный график по всем целям ----------
+  // ---------- агрегированный график по всем (не дневным) целям ----------
   const overallData = useMemo(() => {
     const withProgress = goals.filter((g) => (g.goal_progress || []).length > 0 && Number(g.target_value) > 0);
     if (withProgress.length === 0) return [];
@@ -111,6 +119,12 @@ export default function ChartsPage() {
   const isAll = selected === ALL;
   const activeData = isAll ? overallData : chartData;
 
+  // среднее по всем дням для дневных целей — общая цифра сверху
+  const dailyOverallAvg = dailyDays.length
+    ? Math.round(dailyDays.reduce((s, d) => s + d.pct, 0) / dailyDays.length)
+    : 0;
+  const dailyTotalGoals = dailyDays.reduce((s, d) => s + d.total, 0);
+
   return (
     <div className="space-y-5">
       <header className="rise-in">
@@ -118,114 +132,183 @@ export default function ChartsPage() {
         <h1 className="font-display text-[26px] leading-tight">Динамика</h1>
       </header>
 
-      {!loading && goals.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 rise-in" style={{ animationDelay: "80ms" }}>
-          <button
-            onClick={() => setSelected(ALL)}
-            className={`nav-item px-3.5 py-2 whitespace-nowrap chip ${selected === ALL ? "is-active" : "text-white/45"}`}
-          >
-            Все цели
-          </button>
-          {goals.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setSelected(g.id)}
-              className={`nav-item px-3.5 py-2 whitespace-nowrap chip ${selected === g.id ? "is-active" : "text-white/45"}`}
-            >
-              {g.title}
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-2 rise-in" style={{ animationDelay: "40ms" }}>
+        <button
+          onClick={() => setMode("goals")}
+          className={`nav-item px-3.5 py-2 chip ${mode === "goals" ? "is-active" : "text-white/45"}`}
+        >
+          Обычные цели
+        </button>
+        <button
+          onClick={() => setMode("daily")}
+          className={`nav-item px-3.5 py-2 chip ${mode === "daily" ? "is-active" : "text-white/45"}`}
+        >
+          Ежедневные
+        </button>
+      </div>
+
+      {mode === "goals" && (
+        <>
+          {!loading && goals.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1 rise-in" style={{ animationDelay: "80ms" }}>
+              <button
+                onClick={() => setSelected(ALL)}
+                className={`nav-item px-3.5 py-2 whitespace-nowrap chip ${selected === ALL ? "is-active" : "text-white/45"}`}
+              >
+                Все цели
+              </button>
+              {goals.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setSelected(g.id)}
+                  className={`nav-item px-3.5 py-2 whitespace-nowrap chip ${selected === g.id ? "is-active" : "text-white/45"}`}
+                >
+                  {g.title}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {isAll && !loading && snapshot.length > 0 && (
+            <GlassPanel strong className="p-5 flex items-center gap-5" delay={100}>
+              <div className="font-display text-4xl">{overallAvg}%</div>
+              <div className="flex-1">
+                <p className="text-sm text-white/70 leading-snug">Средний прогресс по всем целям</p>
+                <p className="text-xs text-white/35 mt-0.5">{snapshot.length} {snapshot.length === 1 ? "цель" : "целей"} в расчёте</p>
+              </div>
+            </GlassPanel>
+          )}
+
+          <GlassPanel className="h-72 p-4" delay={140}>
+            {loading ? (
+              <div className="h-full w-full animate-pulse" />
+            ) : activeData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={activeData} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={isAll ? "#8b7bff" : "#5ee6c8"} stopOpacity={0.45} />
+                      <stop offset="100%" stopColor={isAll ? "#8b7bff" : "#5ee6c8"} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(245,245,243,0.08)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: "rgba(245,245,243,0.4)" }}
+                    axisLine={{ stroke: "rgba(245,245,243,0.13)" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: "rgba(245,245,243,0.4)" }}
+                    axisLine={false}
+                    tickLine={false}
+                    {...(isAll ? { domain: [0, 100] } : {})}
+                  />
+                  <Tooltip content={<CustomTooltip suffix={isAll ? "%" : ""} />} />
+                  <Area
+                    type="monotone"
+                    dataKey="total"
+                    stroke={isAll ? "#8b7bff" : "#5ee6c8"}
+                    strokeWidth={2.5}
+                    fill="url(#fillTotal)"
+                    animationDuration={900}
+                    animationEasing="ease-out"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-white/35 text-center px-6">
+                {isAll ? "Пока нет отметок прогресса ни по одной цели" : "Нет данных по прогрессу"}
+              </div>
+            )}
+          </GlassPanel>
+
+          {isAll && !loading && snapshot.length > 0 && (
+            <GlassPanel className="p-4" delay={200}>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/35 mb-3">Снимок по целям</p>
+              <ResponsiveContainer width="100%" height={Math.max(120, snapshot.length * 44)}>
+                <BarChart
+                  data={snapshot}
+                  layout="vertical"
+                  margin={{ top: 0, right: 24, left: 0, bottom: 0 }}
+                  barCategoryGap={14}
+                >
+                  <XAxis type="number" domain={[0, 100]} hide />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={90}
+                    tick={{ fontSize: 11, fill: "rgba(245,245,243,0.55)" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ fill: "rgba(245,245,243,0.04)" }} />
+                  <Bar dataKey="pct" radius={[8, 8, 8, 8]} animationDuration={800} barSize={14}>
+                    {snapshot.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.done ? "#5ee6c8" : PALETTE[idx % PALETTE.length]} />
+                    ))}
+                    <LabelList
+                      dataKey="pct"
+                      position="right"
+                      formatter={(v) => `${v}%`}
+                      style={{ fill: "rgba(245,245,243,0.55)", fontSize: 11, fontFamily: "IBM Plex Mono, monospace" }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </GlassPanel>
+          )}
+        </>
       )}
 
-      {isAll && !loading && snapshot.length > 0 && (
-        <GlassPanel strong className="p-5 flex items-center gap-5" delay={100}>
-          <div className="font-display text-4xl">{overallAvg}%</div>
-          <div className="flex-1">
-            <p className="text-sm text-white/70 leading-snug">Средний прогресс по всем целям</p>
-            <p className="text-xs text-white/35 mt-0.5">{snapshot.length} {snapshot.length === 1 ? "цель" : "целей"} в расчёте</p>
-          </div>
-        </GlassPanel>
-      )}
+      {mode === "daily" && (
+        <>
+          {!dailyLoading && dailyDays.length > 0 && (
+            <GlassPanel strong className="p-5 flex items-center gap-5" delay={100}>
+              <div className="font-display text-4xl">{dailyOverallAvg}%</div>
+              <div className="flex-1">
+                <p className="text-sm text-white/70 leading-snug">Средний % выполнения целей дня</p>
+                <p className="text-xs text-white/35 mt-0.5">
+                  {dailyDays.length} {dailyDays.length === 1 ? "день" : "дней"} · {dailyTotalGoals} {dailyTotalGoals === 1 ? "цель" : "целей"} всего
+                </p>
+              </div>
+            </GlassPanel>
+          )}
 
-      <GlassPanel className="h-72 p-4" delay={140}>
-        {loading ? (
-          <div className="h-full w-full animate-pulse" />
-        ) : activeData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={activeData} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
-              <defs>
-                <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={isAll ? "#8b7bff" : "#5ee6c8"} stopOpacity={0.45} />
-                  <stop offset="100%" stopColor={isAll ? "#8b7bff" : "#5ee6c8"} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="rgba(245,245,243,0.08)" vertical={false} />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10, fill: "rgba(245,245,243,0.4)" }}
-                axisLine={{ stroke: "rgba(245,245,243,0.13)" }}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "rgba(245,245,243,0.4)" }}
-                axisLine={false}
-                tickLine={false}
-                {...(isAll ? { domain: [0, 100] } : {})}
-              />
-              <Tooltip content={<CustomTooltip suffix={isAll ? "%" : ""} />} />
-              <Area
-                type="monotone"
-                dataKey="total"
-                stroke={isAll ? "#8b7bff" : "#5ee6c8"}
-                strokeWidth={2.5}
-                fill="url(#fillTotal)"
-                animationDuration={900}
-                animationEasing="ease-out"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-full flex items-center justify-center text-sm text-white/35 text-center px-6">
-            {isAll ? "Пока нет отметок прогресса ни по одной цели" : "Нет данных по прогрессу"}
-          </div>
-        )}
-      </GlassPanel>
+          <GlassPanel className="h-72 p-4" delay={140}>
+            {dailyLoading ? (
+              <div className="h-full w-full animate-pulse" />
+            ) : dailyDays.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyDays} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(245,245,243,0.08)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: "rgba(245,245,243,0.4)" }}
+                    axisLine={{ stroke: "rgba(245,245,243,0.13)" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fontSize: 10, fill: "rgba(245,245,243,0.4)" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ fill: "rgba(245,245,243,0.04)" }} />
+                  <Bar dataKey="pct" radius={[6, 6, 0, 0]} fill="#5ee6c8" animationDuration={800} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-white/35 text-center px-6">
+                Пока нет ни одной цели дня — они появятся здесь после утреннего сообщения от бота.
+              </div>
+            )}
+          </GlassPanel>
 
-      {isAll && !loading && snapshot.length > 0 && (
-        <GlassPanel className="p-4" delay={200}>
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/35 mb-3">Снимок по целям</p>
-          <ResponsiveContainer width="100%" height={Math.max(120, snapshot.length * 44)}>
-            <BarChart
-              data={snapshot}
-              layout="vertical"
-              margin={{ top: 0, right: 24, left: 0, bottom: 0 }}
-              barCategoryGap={14}
-            >
-              <XAxis type="number" domain={[0, 100]} hide />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={90}
-                tick={{ fontSize: 11, fill: "rgba(245,245,243,0.55)" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ fill: "rgba(245,245,243,0.04)" }} />
-              <Bar dataKey="pct" radius={[8, 8, 8, 8]} animationDuration={800} barSize={14}>
-                {snapshot.map((entry, idx) => (
-                  <Cell key={idx} fill={entry.done ? "#5ee6c8" : PALETTE[idx % PALETTE.length]} />
-                ))}
-                <LabelList
-                  dataKey="pct"
-                  position="right"
-                  formatter={(v) => `${v}%`}
-                  style={{ fill: "rgba(245,245,243,0.55)", fontSize: 11, fontFamily: "IBM Plex Mono, monospace" }}
-                />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </GlassPanel>
+          <p className="text-xs text-white/30 pt-1 text-center">
+            Отдельных графиков по каждой цели дня нет — только общая динамика выполнения.
+          </p>
+        </>
       )}
     </div>
   );
