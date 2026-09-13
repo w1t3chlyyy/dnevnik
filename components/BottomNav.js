@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconDashboard, IconTarget, IconChart, IconUsers, IconSettings, IconNutrition } from "./icons";
+import { IconDashboard, IconTarget, IconChart, IconUsers, IconNutrition, IconLink, IconTrophy } from "./icons";
 
 const items = [
   { href: "/miniapp/dashboard", label: "Дэшборд", Icon: IconDashboard },
@@ -9,7 +9,8 @@ const items = [
   { href: "/miniapp/nutrition", label: "Питание", Icon: IconNutrition },
   { href: "/miniapp/charts", label: "Графики", Icon: IconChart },
   { href: "/miniapp/contacts", label: "Контакты", Icon: IconUsers },
-  { href: "/miniapp/settings", label: "Настройки", Icon: IconSettings }
+  { href: "/miniapp/links", label: "Связи", Icon: IconLink },
+  { href: "/miniapp/summary", label: "Итоги", Icon: IconTrophy }
 ];
 
 export default function BottomNav() {
