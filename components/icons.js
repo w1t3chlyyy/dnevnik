@@ -132,3 +132,13 @@ export function IconAlert({ size = 20, className = "" }) {
     </svg>
   );
 }
+
+export function IconNutrition({ size = 20, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M6 3.5v6a2.5 2.5 0 0 0 5 0v-6" />
+      <path d="M8.5 9.5V20" />
+      <path d="M16.5 3.5c-1.7 0-3 2-3 5.5s1.3 5.5 3 5.5V20" />
+    </svg>
+  );
+}
