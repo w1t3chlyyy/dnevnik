@@ -16,7 +16,7 @@ export async function GET(req) {
     .maybeSingle();
   if (!user) return Response.json({ days: [] });
 
-    const { data: rows } = await db
+  const { data: rows } = await db
     .from("goals")
     .select("goal_date, status, title, created_at")
     .eq("user_id", user.id)
@@ -51,3 +51,4 @@ export async function GET(req) {
     .slice(0, 40);
 
   return Response.json({ days, titles });
+}

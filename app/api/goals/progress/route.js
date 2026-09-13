@@ -49,7 +49,7 @@ export async function POST(req) {
   const total = (progressRows || []).reduce((s, r) => s + Number(r.value), 0);
   const completed = total >= Number(goal.target_value);
 
-    const patch = {
+  const patch = {
     current_value: total,
     status: completed ? "done" : "active"
   };
@@ -63,3 +63,4 @@ export async function POST(req) {
     .maybeSingle();
 
   return Response.json({ goal: updated, completed });
+}
