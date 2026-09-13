@@ -16,21 +16,27 @@ export async function GET(req) {
     .maybeSingle();
   if (!user) return Response.json({ days: [] });
 
-  const { data: rows } = await db
+    const { data: rows } = await db
     .from("goals")
-    .select("goal_date, status, title")
+    .select("goal_date, status, title, created_at")
     .eq("user_id", user.id)
     .eq("is_daily", true)
     .order("goal_date", { ascending: true });
 
   const byDate = {};
+  const titleSeen = new Map(); // title -> дата последнего использования, для сортировки "свежие сверху"
   for (const r of rows || []) {
     const d = r.goal_date;
-    if (!d) continue;
-    byDate[d] = byDate[d] || { date: d, total: 0, done: 0, failed: 0 };
-    byDate[d].total++;
-    if (r.status === "done") byDate[d].done++;
-    if (r.status === "failed") byDate[d].failed++;
+    if (d) {
+      byDate[d] = byDate[d] || { date: d, total: 0, done: 0, failed: 0 };
+      byDate[d].total++;
+      if (r.status === "done") byDate[d].done++;
+      if (r.status === "failed") byDate[d].failed++;
+    }
+    if (r.title) {
+      const prev = titleSeen.get(r.title);
+      if (!prev || r.created_at > prev) titleSeen.set(r.title, r.created_at);
+    }
   }
 
   const days = Object.values(byDate).map((d) => ({
@@ -38,5 +44,10 @@ export async function GET(req) {
     pct: d.total ? Math.round((d.done / d.total) * 100) : 0
   }));
 
-  return Response.json({ days });
-}
+  // Список уникальных названий целей дня — источник "чипов" для drag-конструктора
+  const titles = Array.from(titleSeen.entries())
+    .sort((a, b) => (a[1] < b[1] ? 1 : -1))
+    .map(([title]) => title)
+    .slice(0, 40);
+
+  return Response.json({ days, titles });
