@@ -22,6 +22,36 @@ function pickMorningMessage() {
   return MORNING_MESSAGES[Math.floor(Math.random() * MORNING_MESSAGES.length)];
 }
 
+// Приёмы пищи, о которых бот напоминает занести в трекер питания.
+// Время каждого настраивается через env, дедупликация — через отдельную
+// дата-колонку в users на каждый приём пищи (аналогично last_morning_date).
+const MEAL_PROMPTS = [
+  {
+    type: "breakfast",
+    envVar: "BREAKFAST_TIME_MSK",
+    defaultTime: "08:30",
+    dateCol: "last_breakfast_prompt_date",
+    label: "Завтрак",
+    emoji: "🍳"
+  },
+  {
+    type: "lunch",
+    envVar: "LUNCH_TIME_MSK",
+    defaultTime: "13:00",
+    dateCol: "last_lunch_prompt_date",
+    label: "Обед",
+    emoji: "🍲"
+  },
+  {
+    type: "dinner",
+    envVar: "DINNER_TIME_MSK",
+    defaultTime: "19:30",
+    dateCol: "last_dinner_prompt_date",
+    label: "Ужин",
+    emoji: "🍝"
+  }
+];
+
 // Простая защита эндпоинта: если задан CRON_SECRET — требуем его в
 // query (?secret=...) или в заголовке x-cron-secret / Authorization: Bearer.
 // Если не задан — не блокируем (но это не рекомендуется для продакшена).
@@ -46,6 +76,7 @@ export async function GET(req) {
     digestSent: 0,
     morningSent: 0,
     dailyGoalPrompts: 0,
+    mealPrompts: 0,
     errors: []
   };
   const nowIso = new Date().toISOString();
@@ -118,7 +149,36 @@ export async function GET(req) {
     results.errors.push(`morning-query:${e.message}`);
   }
 
-  // 4) Вечерний итог дня по всем пользователям + отдельные карточки по целям дня
+  // 4) Приёмы пищи — напоминание занести еду в трекер питания
+  try {
+    const { data: users, error } = await db.from("users").select("*");
+    if (error) throw error;
+
+    for (const meal of MEAL_PROMPTS) {
+      const time = process.env[meal.envVar] || meal.defaultTime;
+      if (!isDueNow(time)) continue;
+
+      for (const user of users || []) {
+        if (user[meal.dateCol] === today) continue;
+        try {
+          const kb = new InlineKeyboard().text(`${meal.emoji} Добавить в трекер`, `food_meal:${meal.type}`);
+          await bot.api.sendMessage(
+            user.telegram_id,
+            `${meal.emoji} ${meal.label}! Что съел(а)? Занесём в трекер питания.`,
+            { reply_markup: kb }
+          );
+          await db.from("users").update({ [meal.dateCol]: today }).eq("id", user.id);
+          results.mealPrompts++;
+        } catch (e) {
+          results.errors.push(`meal-${meal.type}:${user.id}:${e.message}`);
+        }
+      }
+    }
+  } catch (e) {
+    results.errors.push(`meal-query:${e.message}`);
+  }
+
+  // 5) Вечерний итог дня по всем пользователям + отдельные карточки по целям дня
   try {
     if (isDueNow(DIGEST_TIME_MSK)) {
       const { data: users, error } = await db.from("users").select("*");
