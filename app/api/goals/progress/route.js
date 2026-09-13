@@ -49,15 +49,17 @@ export async function POST(req) {
   const total = (progressRows || []).reduce((s, r) => s + Number(r.value), 0);
   const completed = total >= Number(goal.target_value);
 
+    const patch = {
+    current_value: total,
+    status: completed ? "done" : "active"
+  };
+  if (completed) patch.completed_at = new Date().toISOString();
+
   const { data: updated } = await db
     .from("goals")
-    .update({
-      current_value: total,
-      status: completed ? "done" : "active"
-    })
+    .update(patch)
     .eq("id", goalId)
     .select("*, goal_progress(value, logged_at)")
     .maybeSingle();
 
   return Response.json({ goal: updated, completed });
-}
