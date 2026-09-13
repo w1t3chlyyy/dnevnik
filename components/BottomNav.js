@@ -8,6 +8,7 @@ const items = [
   { href: "/miniapp/goals", label: "Цели", Icon: IconTarget },
   { href: "/miniapp/charts", label: "Графики", Icon: IconChart },
   { href: "/miniapp/contacts", label: "Контакты", Icon: IconUsers },
+  { href: "/miniapp/nutrition", label: "Питание", Icon: IconNutrition },
   { href: "/miniapp/settings", label: "Настройки", Icon: IconSettings }
 ];
 
