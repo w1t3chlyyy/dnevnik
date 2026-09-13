@@ -42,10 +42,12 @@ export async function GET(req) {
 
     // Автозакрытие целей, у которых наступил дедлайн
     const today = now.toISOString().slice(0, 10);
-    for (const g of goals) {
+        for (const g of goals) {
       if (g.deadline && g.deadline <= today) {
         const status = g.current_value >= g.target_value ? "done" : "failed";
-        await db.from("goals").update({ status }).eq("id", g.id);
+        const patch = { status };
+        if (status === "done") patch.completed_at = new Date().toISOString();
+        await db.from("goals").update(patch).eq("id", g.id);
       }
     }
   }
