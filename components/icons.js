@@ -142,3 +142,12 @@ export function IconNutrition({ size = 20, className = "" }) {
     </svg>
   );
 }
+export function IconLink({ size = 20, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M9 15l6-6" />
+      <path d="M8.5 13.5l-2 2a3 3 0 0 0 4.24 4.24l2.26-2.26" />
+      <path d="M15.5 10.5l2-2a3 3 0 0 0-4.24-4.24l-2.26 2.26" />
+    </svg>
+  );
+}
