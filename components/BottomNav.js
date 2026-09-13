@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconDashboard, IconTarget, IconChart, IconUsers, IconSettings } from "./icons";
+import { IconDashboard, IconTarget, IconChart, IconUsers, IconSettings, IconNutrition } from "./icons";
 
 const items = [
   { href: "/miniapp/dashboard", label: "Дэшборд", Icon: IconDashboard },
   { href: "/miniapp/goals", label: "Цели", Icon: IconTarget },
+  { href: "/miniapp/nutrition", label: "Питание", Icon: IconNutrition },
   { href: "/miniapp/charts", label: "Графики", Icon: IconChart },
   { href: "/miniapp/contacts", label: "Контакты", Icon: IconUsers },
-  { href: "/miniapp/nutrition", label: "Питание", Icon: IconNutrition },
   { href: "/miniapp/settings", label: "Настройки", Icon: IconSettings }
 ];
 
