@@ -1,3 +1,4 @@
+// app/api/cron/dispatch/route.js
 import { NextResponse } from "next/server";
 import { InlineKeyboard } from "grammy";
 import { supabaseAdmin as db } from "@/lib/supabase";
@@ -71,6 +72,7 @@ export async function GET(req) {
   }
 
   const results = {
+    staleDailyClosed: 0,
     onceSent: 0,
     dailySent: 0,
     digestSent: 0,
@@ -81,6 +83,32 @@ export async function GET(req) {
   };
   const nowIso = new Date().toISOString();
   const today = localDateStr();
+
+  // 0) Автозакрытие "протухших" целей дня: у цели дня есть 24 часа на
+  // выполнение (goal_date = день создания). Если к моменту запуска крона
+  // календарные сутки уже сменились, а цель всё ещё active — считаем её
+  // не выполненной. Работает при каждом запуске крона, а не в фиксированное
+  // время, чтобы не плодить "вечно активные" цели дня.
+  try {
+    const { data: stale, error } = await db
+      .from("goals")
+      .select("id")
+      .eq("is_daily", true)
+      .eq("status", "active")
+      .lt("goal_date", today);
+    if (error) throw error;
+
+    for (const g of stale || []) {
+      try {
+        await db.from("goals").update({ status: "failed", hidden: true }).eq("id", g.id);
+        results.staleDailyClosed++;
+      } catch (e) {
+        results.errors.push(`stale-daily:${g.id}:${e.message}`);
+      }
+    }
+  } catch (e) {
+    results.errors.push(`stale-daily-query:${e.message}`);
+  }
 
   // 1) Разовые напоминания ("помыть посуду в 22:00")
   try {
