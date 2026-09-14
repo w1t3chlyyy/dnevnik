@@ -1,3 +1,4 @@
+// app/api/goals/progress/route.js
 import { supabaseAdmin as db } from "@/lib/supabase";
 import { verifyInitData } from "@/lib/verifyTelegram";
 
@@ -5,7 +6,8 @@ import { verifyInitData } from "@/lib/verifyTelegram";
 // быть отрицательным — так можно не только прибавлять, но и убавлять
 // (например, если ошибся при вводе или переоценил результат).
 // Как только сумма отметок достигает цели — статус меняется на "done",
-// а фронт проигрывает анимацию завершения и убирает карточку из активных.
+// цель сразу скрывается из мини-аппа (hidden=true, видна только в
+// «Итогах»/дайджестах), а фронт проигрывает анимацию завершения.
 export async function POST(req) {
   const initData = req.headers.get("x-telegram-init-data");
   const tgUser = verifyInitData(initData);
@@ -54,7 +56,8 @@ export async function POST(req) {
 
   const patch = {
     current_value: total,
-    status: completed ? "done" : "active"
+    status: completed ? "done" : "active",
+    hidden: completed
   };
   if (completed) patch.completed_at = new Date().toISOString();
 
