@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost } from "@/lib/apiClient";
+import { apiGet, apiPost, apiDelete } from "@/lib/apiClient";
 import GlassPanel from "@/components/GlassPanel";
 import ProgressRing from "@/components/ProgressRing";
-import { IconTarget, IconPlus, IconTrophy, IconClose } from "@/components/icons";
+import { IconTarget, IconPlus, IconMinus, IconTrophy, IconClose, IconCheck, IconTrash } from "@/components/icons";
 
 const statusLabel = { active: "В работе", done: "Достигнута", failed: "Не достигнута", paused: "На паузе" };
 
@@ -14,6 +14,7 @@ function pct(g) {
 function GoalCard({ g, i, onLogProgress, leaving }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
+  const [sign, setSign] = useState(1);
   const [saving, setSaving] = useState(false);
   const value_pct = pct(g);
   const remaining = Math.max(0, Number(g.target_value) - Number(g.current_value));
@@ -22,9 +23,10 @@ function GoalCard({ g, i, onLogProgress, leaving }) {
     const num = Number(String(value).replace(",", "."));
     if (!num || saving) return;
     setSaving(true);
-    await onLogProgress(g.id, num);
+    await onLogProgress(g.id, num * sign);
     setSaving(false);
     setValue("");
+    setSign(1);
     setOpen(false);
   }
 
@@ -73,13 +75,35 @@ function GoalCard({ g, i, onLogProgress, leaving }) {
             </button>
           ) : (
             <div className="flex items-center gap-2 pop-in">
+              <div className="flex shrink-0 rounded-xl border border-white/15 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setSign(1)}
+                  aria-label="Прибавить"
+                  className={`w-8 h-9 flex items-center justify-center transition-colors ${
+                    sign === 1 ? "bg-white/15 text-white" : "text-white/35"
+                  }`}
+                >
+                  <IconPlus size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSign(-1)}
+                  aria-label="Убавить"
+                  className={`w-8 h-9 flex items-center justify-center transition-colors border-l border-white/15 ${
+                    sign === -1 ? "bg-white/15 text-white" : "text-white/35"
+                  }`}
+                >
+                  <IconMinus size={13} />
+                </button>
+              </div>
               <input
                 autoFocus
                 inputMode="decimal"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()}
-                placeholder={`+ ${g.metric_unit || "значение"}`}
+                placeholder={g.metric_unit || "значение"}
                 className="flex-1 min-w-0 bg-white/5 border border-white/15 rounded-xl px-3 py-2 text-sm outline-none focus:border-accent/60 transition-colors font-mono"
               />
               <button
@@ -91,7 +115,7 @@ function GoalCard({ g, i, onLogProgress, leaving }) {
                 {saving ? "…" : "Ок"}
               </button>
               <button
-                onClick={() => { setOpen(false); setValue(""); }}
+                onClick={() => { setOpen(false); setValue(""); setSign(1); }}
                 className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl border border-white/15 text-white/40"
               >
                 <IconClose size={14} />
@@ -109,11 +133,59 @@ function GoalCard({ g, i, onLogProgress, leaving }) {
   );
 }
 
+function ArchivedGoalCard({ g, i, confirming, onAskDelete, onCancelDelete, onConfirmDelete }) {
+  const value_pct = pct(g);
+  return (
+    <GlassPanel className="p-4 opacity-70" delay={i * 50}>
+      <div className="flex items-center gap-3">
+        <ProgressRing value={value_pct} size={38} stroke={3} done={g.status === "done"} />
+        <div className="min-w-0 flex-1">
+          <div className="font-medium truncate text-sm">{g.title}</div>
+          <div className="font-mono text-[11px] text-white/35 mt-0.5">
+            {g.current_value} / {g.target_value} {g.metric_unit}
+          </div>
+        </div>
+        <span className="shrink-0 text-[10px] uppercase tracking-wide chip px-2.5 py-1 text-white/50">
+          {statusLabel[g.status]}
+        </span>
+
+        {confirming ? (
+          <div className="shrink-0 flex items-center gap-1.5">
+            <button
+              onClick={onConfirmDelete}
+              aria-label="Подтвердить удаление"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/30 text-white"
+            >
+              <IconCheck size={12} />
+            </button>
+            <button
+              onClick={onCancelDelete}
+              aria-label="Отмена"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/15 text-white/40"
+            >
+              <IconClose size={12} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onAskDelete}
+            aria-label="Удалить из списка"
+            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg border border-white/15 text-white/35"
+          >
+            <IconTrash size={13} />
+          </button>
+        )}
+      </div>
+    </GlassPanel>
+  );
+}
+
 export default function GoalsPage() {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [leavingIds, setLeavingIds] = useState([]);
   const [showArchive, setShowArchive] = useState(false);
+  const [confirmingId, setConfirmingId] = useState(null);
 
   useEffect(() => {
     apiGet("/api/goals").then((d) => {
@@ -135,6 +207,19 @@ export default function GoalsPage() {
       }, 680);
     } else if (res.goal) {
       setGoals((prev) => prev.map((g) => (g.id === goalId ? res.goal : g)));
+    }
+  }
+
+  // Удаление из архива "навсегда" — на деле это hidden=true на бэкенде,
+  // поэтому статистика (Итоги) по этой цели никуда не денется, а из списков
+  // мини-аппа она пропадёт сразу же, оптимистично.
+  async function handleDeleteArchived(goalId) {
+    setConfirmingId(null);
+    setGoals((prev) => prev.filter((g) => g.id !== goalId));
+    const res = await apiDelete(`/api/goals/${goalId}`);
+    if (res?.error) {
+      // не получилось — вернуть обратно и перезагрузить список, чтобы не разойтись с сервером
+      apiGet("/api/goals").then((d) => setGoals(d.goals || []));
     }
   }
 
@@ -190,25 +275,20 @@ export default function GoalsPage() {
 
           {showArchive && (
             <div className="space-y-3">
-              {archived.map((g, i) => {
-                const value_pct = pct(g);
-                return (
-                  <GlassPanel key={g.id} className="p-4 opacity-70" delay={i * 50}>
-                    <div className="flex items-center gap-3">
-                      <ProgressRing value={value_pct} size={38} stroke={3} done={g.status === "done"} />
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium truncate text-sm">{g.title}</div>
-                        <div className="font-mono text-[11px] text-white/35 mt-0.5">
-                          {g.current_value} / {g.target_value} {g.metric_unit}
-                        </div>
-                      </div>
-                      <span className="shrink-0 text-[10px] uppercase tracking-wide chip px-2.5 py-1 text-white/50">
-                        {statusLabel[g.status]}
-                      </span>
-                    </div>
-                  </GlassPanel>
-                );
-              })}
+              {archived.map((g, i) => (
+                <ArchivedGoalCard
+                  key={g.id}
+                  g={g}
+                  i={i}
+                  confirming={confirmingId === g.id}
+                  onAskDelete={() => setConfirmingId(g.id)}
+                  onCancelDelete={() => setConfirmingId(null)}
+                  onConfirmDelete={() => handleDeleteArchived(g.id)}
+                />
+              ))}
+              <p className="text-[11px] text-white/30 text-center px-2">
+                Удаление убирает цель из списков — прошлая статистика в «Итогах» не изменится.
+              </p>
             </div>
           )}
         </div>

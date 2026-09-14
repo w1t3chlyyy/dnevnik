@@ -41,6 +41,12 @@ create table if not exists goals (
   -- дата фактического завершения — нужна для точных месячных/годовых итогов (lib/summary.js)
   completed_at timestamptz,
 
+  -- "мягкое" удаление: цель скрывается из мини-аппа (дэшборд/список/графики/
+  -- связи), но НЕ удаляется из базы — так прогресс по ней продолжает
+  -- учитываться в /api/summary (там считается по историческим данным,
+  -- поэтому обычное delete "задним числом" портит уже прошедшие периоды).
+  hidden boolean default false,
+
   created_at timestamptz default now()
 );
 
@@ -167,6 +173,7 @@ create table if not exists bot_sessions (
 
 create index if not exists idx_goals_user on goals(user_id);
 create index if not exists idx_goals_daily on goals(user_id, is_daily, goal_date);
+create index if not exists idx_goals_hidden on goals(user_id, hidden);
 create index if not exists idx_progress_goal on goal_progress(goal_id);
 create index if not exists idx_contacts_user on contacts(user_id);
 create index if not exists idx_reminders_user on reminders(user_id);
@@ -190,10 +197,13 @@ create index if not exists idx_ai_chat_history_user on ai_chat_history(user_id, 
 -- alter table goals add column if not exists is_daily boolean default false;
 -- alter table goals add column if not exists goal_date date;
 -- alter table goals add column if not exists completed_at timestamptz;
+-- alter table goals add column if not exists hidden boolean default false;
 --
 -- alter table reminders add column if not exists type text default 'daily';
 -- alter table reminders add column if not exists last_sent_date date;
 -- alter table reminders add column if not exists remind_at timestamptz;
 -- alter table reminders add column if not exists is_sent boolean default false;
 -- alter table reminders add column if not exists sent_at timestamptz;
+--
+-- create index if not exists idx_goals_hidden on goals(user_id, hidden);
 -- ==========================================================

@@ -94,6 +94,14 @@ export function IconPlus({ size = 18, className = "" }) {
   );
 }
 
+export function IconMinus({ size = 18, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
 export function IconTrophy({ size = 20, className = "" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
@@ -111,14 +119,6 @@ export function IconClose({ size = 18, className = "" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
       <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
-  );
-}
-
-export function IconMinus({ size = 18, className = "" }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
-      <path d="M5 12h14" />
     </svg>
   );
 }
@@ -148,6 +148,17 @@ export function IconLink({ size = 20, className = "" }) {
       <path d="M9 15l6-6" />
       <path d="M8.5 13.5l-2 2a3 3 0 0 0 4.24 4.24l2.26-2.26" />
       <path d="M15.5 10.5l2-2a3 3 0 0 0-4.24-4.24l-2.26 2.26" />
+    </svg>
+  );
+}
+
+export function IconTrash({ size = 18, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M4.5 7h15" />
+      <path d="M9.5 7V5.5a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5V7" />
+      <path d="M6.5 7l.8 12a2 2 0 0 0 2 1.9h5.4a2 2 0 0 0 2-1.9l.8-12" />
+      <path d="M10 11v6M14 11v6" />
     </svg>
   );
 }

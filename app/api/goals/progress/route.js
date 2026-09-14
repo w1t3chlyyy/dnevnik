@@ -1,7 +1,9 @@
 import { supabaseAdmin as db } from "@/lib/supabase";
 import { verifyInitData } from "@/lib/verifyTelegram";
 
-// Отметить прогресс по цели прямо из мини-аппа (по частям).
+// Отметить прогресс по цели прямо из мини-аппа (по частям). value может
+// быть отрицательным — так можно не только прибавлять, но и убавлять
+// (например, если ошибся при вводе или переоценил результат).
 // Как только сумма отметок достигает цели — статус меняется на "done",
 // а фронт проигрывает анимацию завершения и убирает карточку из активных.
 export async function POST(req) {
@@ -46,7 +48,8 @@ export async function POST(req) {
     .from("goal_progress")
     .select("value")
     .eq("goal_id", goalId);
-  const total = (progressRows || []).reduce((s, r) => s + Number(r.value), 0);
+  const rawTotal = (progressRows || []).reduce((s, r) => s + Number(r.value), 0);
+  const total = Math.max(0, rawTotal); // убавление ниже нуля не имеет смысла
   const completed = total >= Number(goal.target_value);
 
   const patch = {

@@ -1,19 +1,17 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { apiGet, apiPost, apiDelete } from "@/lib/apiClient";
 import GlassPanel from "@/components/GlassPanel";
-import { IconLink, IconClose, IconTarget } from "@/components/icons";
+import { IconLink, IconClose, IconTarget, IconCheck } from "@/components/icons";
 
 export default function LinksPage() {
   const [goals, setGoals] = useState([]);
   const [dailyTitles, setDailyTitles] = useState([]);
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [drag, setDrag] = useState(null); // { title, x, y }
-  const [hoverGoalId, setHoverGoalId] = useState(null);
+  const [selectedTitle, setSelectedTitle] = useState(null); // цель дня, выбранная для связывания
+  const [linkingGoalId, setLinkingGoalId] = useState(null); // id цели, к которой сейчас привязываем (для спиннера)
   const [toast, setToast] = useState(null);
-
-  const cardRefs = useRef(new Map());
 
   async function loadAll() {
     const [goalsRes, dailyRes, linksRes] = await Promise.all([
@@ -37,44 +35,23 @@ export default function LinksPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const setCardRef = useCallback((id, el) => {
-    if (el) cardRefs.current.set(id, el);
-    else cardRefs.current.delete(id);
-  }, []);
+  function handleChipTap(title) {
+    setSelectedTitle((curr) => (curr === title ? null : title));
+  }
 
-  function hitTest(x, y) {
-    for (const [id, el] of cardRefs.current.entries()) {
-      const r = el.getBoundingClientRect();
-      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return id;
+  async function handleGoalTap(goalId) {
+    if (!selectedTitle) {
+      setToast({ type: "info", text: "Сначала выбери цель дня ниже 👇" });
+      return;
     }
-    return null;
-  }
-
-  function handlePointerDown(e, title) {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setDrag({ title, x: e.clientX, y: e.clientY });
-  }
-
-  function handlePointerMove(e) {
-    if (!drag) return;
-    e.preventDefault();
-    setDrag((d) => (d ? { ...d, x: e.clientX, y: e.clientY } : d));
-    setHoverGoalId(hitTest(e.clientX, e.clientY));
-  }
-
-  async function handlePointerUp(e) {
-    if (!drag) return;
-    const targetId = hitTest(e.clientX, e.clientY);
-    const title = drag.title;
-    setDrag(null);
-    setHoverGoalId(null);
-    if (!targetId) return;
-
+    setLinkingGoalId(goalId);
     const res = await apiPost("/api/goal-links", {
-      daily_title: title,
-      parent_goal_id: targetId,
+      daily_title: selectedTitle,
+      parent_goal_id: goalId,
       multiplier: 1
     });
+    setLinkingGoalId(null);
+    setSelectedTitle(null);
     if (res?.error) {
       setToast({ type: "error", text: "Не получилось связать." });
       return;
@@ -102,12 +79,7 @@ export default function LinksPage() {
   const linkedTitles = new Set(links.map((l) => l.daily_title));
 
   return (
-    <div
-      className="space-y-5 select-none"
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-    >
+    <div className="space-y-5">
       <header className="rise-in">
         <p className="text-[11px] uppercase tracking-[0.14em] text-white/35 mb-1">Автоматизация</p>
         <h1 className="font-display text-[26px] leading-tight">Конструктор целей</h1>
@@ -115,7 +87,7 @@ export default function LinksPage() {
 
       <GlassPanel className="p-4" delay={40}>
         <p className="text-xs text-white/45 leading-relaxed">
-          Зажми цель дня внизу и перетащи на обычную цель — они свяжутся, и прогресс дневной цели
+          Нажми на цель дня внизу, затем на обычную цель выше — они свяжутся, и прогресс дневной цели
           будет автоматически прибавляться к общей при каждом выполнении.
         </p>
       </GlassPanel>
@@ -137,15 +109,22 @@ export default function LinksPage() {
             )}
             <div className="space-y-2.5">
               {goals.map((g) => (
-                <div
+                <button
                   key={g.id}
-                  ref={(el) => setCardRef(g.id, el)}
-                  className={`glass p-4 flex items-center gap-3 transition-all duration-150 ${
-                    hoverGoalId === g.id ? "border-accent/70 scale-[1.02] bg-white/10" : ""
+                  onClick={() => handleGoalTap(g.id)}
+                  disabled={linkingGoalId === g.id}
+                  className={`w-full text-left glass p-4 flex items-center gap-3 transition-all duration-150 glass-tap ${
+                    selectedTitle ? "cursor-pointer" : "cursor-default"
+                  } ${
+                    selectedTitle && linkingGoalId !== g.id ? "border-accent/60 bg-white/[0.07]" : ""
                   }`}
                 >
                   <div className="w-9 h-9 rounded-2xl shrink-0 flex items-center justify-center border border-white/20">
-                    <IconTarget size={15} className="text-white/60" />
+                    {linkingGoalId === g.id ? (
+                      <IconCheck size={15} className="text-accent-2" />
+                    ) : (
+                      <IconTarget size={15} className="text-white/60" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate text-sm">{g.title}</div>
@@ -153,35 +132,43 @@ export default function LinksPage() {
                       {g.current_value}/{g.target_value} {g.metric_unit || ""}
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </section>
 
           <section className="space-y-2">
             <h2 className="text-[11px] uppercase tracking-[0.14em] text-white/35 px-1">
-              Цели дня — зажми и тяни вверх
+              Цели дня — нажми, чтобы выбрать
             </h2>
             {dailyTitles.length === 0 ? (
               <GlassPanel className="p-5 text-center">
                 <p className="text-sm text-white/40">Пока нет ни одной цели дня.</p>
               </GlassPanel>
             ) : (
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
                 {dailyTitles.map((title) => (
-                  <div
+                  <button
                     key={title}
-                    onPointerDown={(e) => handlePointerDown(e, title)}
-                    className={`chip shrink-0 px-3.5 py-2.5 text-xs flex items-center gap-1.5 cursor-grab ${
-                      linkedTitles.has(title) ? "border-accent-2/50 text-white/80" : "text-white/60"
-                    } ${drag?.title === title ? "opacity-30" : ""}`}
-                    style={{ touchAction: "none" }}
+                    onClick={() => handleChipTap(title)}
+                    className={`chip glass-tap shrink-0 px-3.5 py-2.5 text-xs flex items-center gap-1.5 ${
+                      selectedTitle === title
+                        ? "is-active"
+                        : linkedTitles.has(title)
+                        ? "border-accent-2/50 text-white/80"
+                        : "text-white/60"
+                    }`}
                   >
                     {linkedTitles.has(title) && <IconLink size={11} />}
                     {title}
-                  </div>
+                  </button>
                 ))}
               </div>
+            )}
+            {selectedTitle && (
+              <p className="text-[11px] text-accent-2 px-1">
+                Выбрано: «{selectedTitle}» — теперь нажми на обычную цель выше.
+              </p>
             )}
           </section>
         </>
@@ -220,15 +207,6 @@ export default function LinksPage() {
       {toast && (
         <div className="fixed bottom-28 left-1/2 -translate-x-1/2 chip px-4 py-2 text-xs bg-black/70 z-50">
           {toast.text}
-        </div>
-      )}
-
-      {drag && (
-        <div
-          className="fixed z-50 pointer-events-none chip px-3.5 py-2.5 text-xs border-accent/60"
-          style={{ left: drag.x - 40, top: drag.y - 20, background: "rgba(139,123,255,0.35)" }}
-        >
-          {drag.title}
         </div>
       )}
     </div>
