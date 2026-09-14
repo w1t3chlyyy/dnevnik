@@ -1,3 +1,4 @@
+// app/miniapp/goals/page.js
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost, apiDelete } from "@/lib/apiClient";
@@ -11,7 +12,7 @@ function pct(g) {
   return Math.min(100, Math.round((Number(g.current_value) / Number(g.target_value)) * 100) || 0);
 }
 
-function GoalCard({ g, i, onLogProgress, leaving }) {
+function GoalCard({ g, i, onLogProgress, leaving, confirming, onAskDelete, onCancelDelete, onConfirmDelete }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [sign, setSign] = useState(1);
@@ -43,9 +44,37 @@ function GoalCard({ g, i, onLogProgress, leaving }) {
             <div className="font-mono text-[11px] text-white/35 mt-0.5">до {g.deadline}</div>
           )}
         </div>
-        <span className="shrink-0 text-[10px] uppercase tracking-wide chip px-2.5 py-1 text-white/60">
-          {statusLabel[g.status]}
-        </span>
+        <div className="shrink-0 flex items-center gap-1.5">
+          <span className="text-[10px] uppercase tracking-wide chip px-2.5 py-1 text-white/60">
+            {statusLabel[g.status]}
+          </span>
+          {confirming ? (
+            <>
+              <button
+                onClick={onConfirmDelete}
+                aria-label="Подтвердить удаление"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/30 text-white"
+              >
+                <IconCheck size={12} />
+              </button>
+              <button
+                onClick={onCancelDelete}
+                aria-label="Отмена"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/15 text-white/40"
+              >
+                <IconClose size={12} />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onAskDelete}
+              aria-label="Удалить цель"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/15 text-white/35"
+            >
+              <IconTrash size={13} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-3 mt-3">
@@ -210,15 +239,15 @@ export default function GoalsPage() {
     }
   }
 
-  // Удаление из архива "навсегда" — на деле это hidden=true на бэкенде,
-  // поэтому статистика (Итоги) по этой цели никуда не денется, а из списков
-  // мини-аппа она пропадёт сразу же, оптимистично.
-  async function handleDeleteArchived(goalId) {
+  // Удаление цели (активной или архивной) — на деле это hidden=true на
+  // бэкенде, поэтому статистика (Итоги) по этой цели никуда не денется, а
+  // из списков мини-аппа она пропадёт сразу же, оптимистично.
+  async function handleDeleteGoal(goalId) {
     setConfirmingId(null);
     setGoals((prev) => prev.filter((g) => g.id !== goalId));
     const res = await apiDelete(`/api/goals/${goalId}`);
     if (res?.error) {
-      // не получилось — вернуть обратно и перезагрузить список, чтобы не разойтись с сервером
+      // не получилось — перезагрузить список, чтобы не разойтись с сервером
       apiGet("/api/goals").then((d) => setGoals(d.goals || []));
     }
   }
@@ -247,6 +276,10 @@ export default function GoalsPage() {
               i={i}
               onLogProgress={handleLogProgress}
               leaving={leavingIds.includes(g.id)}
+              confirming={confirmingId === g.id}
+              onAskDelete={() => setConfirmingId(g.id)}
+              onCancelDelete={() => setConfirmingId(null)}
+              onConfirmDelete={() => handleDeleteGoal(g.id)}
             />
           ))}
 
@@ -283,7 +316,7 @@ export default function GoalsPage() {
                   confirming={confirmingId === g.id}
                   onAskDelete={() => setConfirmingId(g.id)}
                   onCancelDelete={() => setConfirmingId(null)}
-                  onConfirmDelete={() => handleDeleteArchived(g.id)}
+                  onConfirmDelete={() => handleDeleteGoal(g.id)}
                 />
               ))}
               <p className="text-[11px] text-white/30 text-center px-2">
