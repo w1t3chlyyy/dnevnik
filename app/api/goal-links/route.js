@@ -1,3 +1,4 @@
+// app/api/goal-links/route.js
 import { supabaseAdmin as db } from "@/lib/supabase";
 import { verifyInitData } from "@/lib/verifyTelegram";
 
@@ -19,11 +20,15 @@ export async function GET(req) {
 
   const { data: links } = await db
     .from("goal_links")
-    .select("*, goals:parent_goal_id(id, title, target_value, current_value, metric_unit, status)")
+    .select("*, goals:parent_goal_id(id, title, target_value, current_value, metric_unit, status, hidden)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  return Response.json({ links: links || [] });
+  // Связи на цели, которые пользователь удалил/цель уже достигнута
+  // (hidden=true), нигде не должны быть видны — исключаем их из ответа.
+  const visible = (links || []).filter((l) => l.goals && !l.goals.hidden);
+
+  return Response.json({ links: visible });
 }
 
 export async function POST(req) {
@@ -44,6 +49,7 @@ export async function POST(req) {
     .select("id")
     .eq("id", parentGoalId)
     .eq("user_id", user.id)
+    .eq("hidden", false)
     .maybeSingle();
   if (!parentGoal) return Response.json({ error: "not_found" }, { status: 404 });
 
