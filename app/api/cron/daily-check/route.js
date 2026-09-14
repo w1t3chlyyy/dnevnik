@@ -1,3 +1,4 @@
+// app/api/cron/daily-check/route.js
 import { supabaseAdmin as db } from "@/lib/supabase";
 import { Bot } from "grammy";
 
@@ -40,12 +41,13 @@ export async function GET(req) {
       `Итоги дня по целям:\n\n${lines.join("\n")}`
     );
 
-    // Автозакрытие целей, у которых наступил дедлайн
+    // Автозакрытие целей, у которых наступил дедлайн. Закрытая цель сразу
+    // скрывается из мини-аппа (hidden=true) — видна только в «Итогах».
     const today = now.toISOString().slice(0, 10);
-        for (const g of goals) {
+    for (const g of goals) {
       if (g.deadline && g.deadline <= today) {
         const status = g.current_value >= g.target_value ? "done" : "failed";
-        const patch = { status };
+        const patch = { status, hidden: true };
         if (status === "done") patch.completed_at = new Date().toISOString();
         await db.from("goals").update(patch).eq("id", g.id);
       }
