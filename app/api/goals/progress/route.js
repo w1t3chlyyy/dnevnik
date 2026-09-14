@@ -1,13 +1,7 @@
-// app/api/goals/progress/route.js
 import { supabaseAdmin as db } from "@/lib/supabase";
 import { verifyInitData } from "@/lib/verifyTelegram";
+import { propagateDailyCompletion } from "@/lib/goalLinks"; // ← добавить
 
-// Отметить прогресс по цели прямо из мини-аппа (по частям). value может
-// быть отрицательным — так можно не только прибавлять, но и убавлять
-// (например, если ошибся при вводе или переоценил результат).
-// Как только сумма отметок достигает цели — статус меняется на "done",
-// цель сразу скрывается из мини-аппа (hidden=true, видна только в
-// «Итогах»/дайджестах), а фронт проигрывает анимацию завершения.
 export async function POST(req) {
   const initData = req.headers.get("x-telegram-init-data");
   const tgUser = verifyInitData(initData);
@@ -22,15 +16,12 @@ export async function POST(req) {
   }
 
   const { data: user } = await db
-    .from("users")
-    .select("id")
-    .eq("telegram_id", tgUser.id)
-    .maybeSingle();
+    .from("users").select("id").eq("telegram_id", tgUser.id).maybeSingle();
   if (!user) return Response.json({ error: "unauthorized" }, { status: 401 });
 
   const { data: goal } = await db
     .from("goals")
-    .select("id, user_id, target_value, status")
+    .select("id, user_id, title, target_value, status, is_daily") // ← добавили title, is_daily
     .eq("id", goalId)
     .maybeSingle();
 
@@ -47,11 +38,9 @@ export async function POST(req) {
   if (insertError) return Response.json({ error: "db_error" }, { status: 500 });
 
   const { data: progressRows } = await db
-    .from("goal_progress")
-    .select("value")
-    .eq("goal_id", goalId);
+    .from("goal_progress").select("value").eq("goal_id", goalId);
   const rawTotal = (progressRows || []).reduce((s, r) => s + Number(r.value), 0);
-  const total = Math.max(0, rawTotal); // убавление ниже нуля не имеет смысла
+  const total = Math.max(0, rawTotal);
   const completed = total >= Number(goal.target_value);
 
   const patch = {
@@ -68,5 +57,11 @@ export async function POST(req) {
     .select("*, goal_progress(value, logged_at)")
     .maybeSingle();
 
-  return Response.json({ goal: updated, completed });
+  // ← вот этого блока не было: пробрасываем прогресс в связанную обычную цель
+  let linkedGoal = null;
+  if (completed && goal.is_daily) {
+    linkedGoal = await propagateDailyCompletion({ ...goal, current_value: total, status: "active" });
+  }
+
+  return Response.json({ goal: updated, completed, linkedGoal });
 }
