@@ -10,7 +10,7 @@ export const maxDuration = 60;
 
 // Во сколько по МСК слать вечерний итог и утреннюю мотивацию.
 // Можно переопределить через env, не трогая код.
-const DIGEST_TIME_MSK = process.env.DIGEST_TIME_MSK || "22:00";
+const DIGEST_TIME_MSK = process.env.DIGEST_TIME_MSK || "23:59";
 const MORNING_TIME_MSK = process.env.MORNING_TIME_MSK || "10:00";
 
 const MORNING_MESSAGES = [
@@ -30,7 +30,7 @@ const MEAL_PROMPTS = [
   {
     type: "breakfast",
     envVar: "BREAKFAST_TIME_MSK",
-    defaultTime: "08:30",
+    defaultTime: "11:30",
     dateCol: "last_breakfast_prompt_date",
     label: "Завтрак",
     emoji: "🍳"
@@ -38,7 +38,7 @@ const MEAL_PROMPTS = [
   {
     type: "lunch",
     envVar: "LUNCH_TIME_MSK",
-    defaultTime: "13:00",
+    defaultTime: "15:00",
     dateCol: "last_lunch_prompt_date",
     label: "Обед",
     emoji: "🍲"
@@ -46,7 +46,7 @@ const MEAL_PROMPTS = [
   {
     type: "dinner",
     envVar: "DINNER_TIME_MSK",
-    defaultTime: "19:30",
+    defaultTime: "21:30",
     dateCol: "last_dinner_prompt_date",
     label: "Ужин",
     emoji: "🍝"
