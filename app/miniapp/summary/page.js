@@ -4,6 +4,14 @@ import { apiGet } from "@/lib/apiClient";
 import GlassPanel from "@/components/GlassPanel";
 import CountUp from "@/components/CountUp";
 
+function fmtDuration(min) {
+  const m = Math.round(min || 0);
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  if (!h) return `${r} мин`;
+  return r ? `${h} ч ${r} мин` : `${h} ч`;
+}
+
 function DeltaBadge({ diff, pct }) {
   if (!diff) return <span className="text-[10px] text-white/30 font-mono">без изменений</span>;
   const up = diff > 0;
@@ -125,6 +133,37 @@ export default function SummaryPage() {
               delay={270}
             />
           </div>
+
+          {data.activities?.length > 0 && (
+            <GlassPanel className="p-4" delay={300}>
+              <div className="flex items-baseline justify-between mb-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">Время по делам</p>
+                <span className="font-mono text-xs text-white/60">
+                  {fmtDuration(data.current.activityMinutes)}
+                </span>
+              </div>
+              <div className="space-y-3.5">
+                {data.activities.map((a) => (
+                  <div key={a.name}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-white/80">{a.name}</span>
+                      <span className="font-mono text-white/60">{fmtDuration(a.minutes)}</span>
+                    </div>
+                    <div className="progress-track">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${Math.round((a.minutes / data.activities[0].minutes) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="mt-1 flex justify-between">
+                      <span className="text-[10px] text-white/30 font-mono">{a.sessions} раз</span>
+                      <DeltaBadge diff={a.diff} pct={a.pct} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassPanel>
+          )}
 
           <p className="text-xs text-white/30 text-center pt-1">
             Дней с записями питания: {data.current.nutritionLoggedDays}
