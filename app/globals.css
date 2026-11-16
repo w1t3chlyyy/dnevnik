@@ -1,25 +1,22 @@
-@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Токены из Figma */
 :root {
-  --bg: #08080a;
-  --bg-soft: #0e0e11;
-  --ink: #f5f5f3;
-  --ink-dim: rgba(245, 245, 243, 0.58);
-  --ink-faint: rgba(245, 245, 243, 0.36);
-  --line: rgba(245, 245, 243, 0.13);
-  --line-strong: rgba(245, 245, 243, 0.26);
-  --glass: rgba(245, 245, 243, 0.055);
-  --glass-strong: rgba(245, 245, 243, 0.1);
-  --white: #ffffff;
-  --accent: #8b7bff;
-  --accent-2: #5ee6c8;
-  --accent-3: #ff9f6e;
-  --radius-glass: 28px;
-  --radius-glass-sm: 20px;
+  --bg: #000000;
+  --card: #171717;
+  --blue: #2f6bff;
+  --blue-deep: #1c4099;
+  --blue-soft: #d6e2ff;
+  --ink: #ffffff;
+  --line: rgba(255, 255, 255, 0.2);
+  --accent: #2f6bff;
+  --accent-2: #d6e2ff;
+  --radius-glass: 34px;
+  --radius-glass-sm: 24px;
 }
 
 * {
@@ -31,8 +28,9 @@ html {
   background: var(--bg);
 }
 
+/* body прозрачный, иначе он перекроет фон-свечение (AmbientBackground, z-index:-1) */
 body {
-  background: var(--bg);
+  background: transparent;
   color: var(--ink);
   font-family: "Montserrat", -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -40,260 +38,123 @@ body {
   min-height: 100vh;
 }
 
-.font-display {
-  font-family: "Unbounded", -apple-system, sans-serif;
-  letter-spacing: -0.01em;
+/* контейнер для единиц макета (lib/fx.js) */
+.cq {
+  container-type: inline-size;
 }
 
+.font-display {
+  font-family: "Unbounded", -apple-system, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
 .font-mono {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- surfaces ---------- */
-
+/* ---------- поверхности (остальные страницы в стиле дашборда) ---------- */
 .glass {
   position: relative;
-  background: var(--glass);
-  border: 1px solid var(--line);
+  background: var(--card);
   border-radius: var(--radius-glass);
-  backdrop-filter: blur(22px) saturate(130%);
-  -webkit-backdrop-filter: blur(22px) saturate(130%);
   overflow: hidden;
-  transition: border-color 0.35s ease, background 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
 }
-
 .glass-strong {
-  background: var(--glass-strong);
-  border: 1px solid var(--line-strong);
+  position: relative;
+  background: var(--blue);
   border-radius: var(--radius-glass);
-  backdrop-filter: blur(26px) saturate(140%);
-  -webkit-backdrop-filter: blur(26px) saturate(140%);
   overflow: hidden;
-  box-shadow: 0 20px 60px -24px rgba(0, 0, 0, 0.55);
 }
-
 .glass-sm {
   border-radius: var(--radius-glass-sm);
 }
-
 .glass-tap {
   cursor: pointer;
 }
 .glass-tap:active {
   transform: scale(0.985);
 }
-
 .hairline {
   border-color: var(--line);
 }
 
-/* faint diagonal sheen along the top edge of a glass slab */
-.glass::before,
-.glass-strong::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.09) 0%,
-    rgba(255, 255, 255, 0) 32%
-  );
-}
-
-/* subtle inner border glow for extra glass depth */
-.glass::after,
-.glass-strong::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-/* ---------- ambient background ---------- */
-
-.ambient-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  background: var(--bg);
-}
-
-.ambient-orb {
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(70px);
-  background: radial-gradient(circle, rgba(139, 123, 255, 0.22) 0%, rgba(139, 123, 255, 0) 70%);
-  will-change: transform;
-}
-
-.ambient-orb-a {
-  width: 420px;
-  height: 420px;
-  top: -120px;
-  left: -100px;
-  animation: drift-a 26s ease-in-out infinite;
-}
-
-.ambient-orb-b {
-  width: 380px;
-  height: 380px;
-  bottom: -80px;
-  right: -120px;
-  background: radial-gradient(circle, rgba(94, 230, 200, 0.16) 0%, rgba(94, 230, 200, 0) 70%);
-  animation: drift-b 32s ease-in-out infinite;
-}
-
-.ambient-orb-c {
-  width: 300px;
-  height: 300px;
-  top: 40%;
-  left: 50%;
-  background: radial-gradient(circle, rgba(255, 159, 110, 0.1) 0%, rgba(255, 159, 110, 0) 70%);
-  animation: drift-c 38s ease-in-out infinite;
-}
-
-.ambient-grid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.4;
-  background-image: linear-gradient(rgba(245, 245, 243, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(245, 245, 243, 0.035) 1px, transparent 1px);
-  background-size: 34px 34px;
-  mask-image: radial-gradient(circle at 50% 0%, black 0%, transparent 75%);
-}
-
-.ambient-grain {
-  position: absolute;
-  inset: 0;
-  opacity: 0.045;
-  mix-blend-mode: overlay;
-}
-
-@keyframes drift-a {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(40px, 60px); }
-}
-
-@keyframes drift-b {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-30px, -50px); }
-}
-
-@keyframes drift-c {
-  0%, 100% { transform: translate(-50%, 0) scale(1); }
-  50% { transform: translate(-50%, -40px) scale(1.15); }
-}
-
-/* ---------- entrance choreography ---------- */
-
+/* ---------- анимации ---------- */
 .rise-in {
   animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-
 @keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-
-/* goal card exit — plays then the item unmounts */
 .goal-leaving {
   animation: goal-complete 0.65s cubic-bezier(0.4, 0, 0.2, 1) both;
   pointer-events: none;
 }
-
 @keyframes goal-complete {
   0% { transform: scale(1); opacity: 1; }
   30% { transform: scale(1.02); opacity: 1; }
   100% { transform: scale(0.82); opacity: 0; }
 }
-
-/* celebratory glow ring shown briefly on completion */
 .completion-glow {
   position: absolute;
   inset: -20%;
   border-radius: inherit;
-  background: radial-gradient(circle, rgba(94, 230, 200, 0.35) 0%, rgba(94, 230, 200, 0) 70%);
+  background: radial-gradient(circle, rgba(214, 226, 255, 0.4) 0%, rgba(214, 226, 255, 0) 70%);
   animation: ring-pulse 0.8s ease-out;
   pointer-events: none;
 }
+@keyframes ring-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.06); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.float-slow { animation: float-slow 5s ease-in-out infinite; }
 
-/* ---------- misc ---------- */
-
+/* ---------- прочее ---------- */
 .progress-track {
-  height: 6px;
+  height: 8px;
   border-radius: 999px;
-  background: var(--line);
+  background: rgba(255, 255, 255, 0.14);
   width: 100%;
   overflow: hidden;
 }
 .progress-fill {
-  height: 6px;
+  height: 8px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+  background: var(--blue);
   transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
 }
 .progress-fill.is-done {
-  background: linear-gradient(90deg, var(--accent-2) 0%, #8ff7d8 100%);
+  background: var(--blue-soft);
 }
-
-.shimmer-text {
-  background: linear-gradient(
-    90deg,
-    var(--ink-dim) 0%,
-    var(--white) 50%,
-    var(--ink-dim) 100%
-  );
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: shimmer 2.6s linear infinite;
-}
+/* на синих панелях трек светлее, а заливка — белая */
+.glass-strong .progress-track { background: rgba(255, 255, 255, 0.25); }
+.glass-strong .progress-fill { background: #fff; }
 
 .nav-item {
   font-size: 10px;
   letter-spacing: 0.03em;
 }
-
 .chip {
   border-radius: 999px;
-  border: 1px solid var(--line);
-  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, transform 0.2s ease;
+  border: 0;
+  background: var(--card);
+  transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease;
 }
-.chip:active {
-  transform: scale(0.96);
-}
+.chip:active { transform: scale(0.96); }
 .chip.is-active {
-  border-color: rgba(139, 123, 255, 0.5);
-  background: linear-gradient(135deg, rgba(139, 123, 255, 0.22), rgba(94, 230, 200, 0.12));
-  color: var(--white);
+  background: var(--blue);
+  color: #fff;
 }
 
-.float-slow {
-  animation: float-slow 5s ease-in-out infinite;
-}
-
-::selection {
-  background: rgba(139, 123, 255, 0.35);
-}
+::selection { background: rgba(47, 107, 255, 0.5); }
 
 @media (prefers-reduced-motion: reduce) {
-  .rise-in, .ambient-orb-a, .ambient-orb-b, .ambient-orb-c, .float-slow, .shimmer-text, .goal-leaving, .completion-glow {
-    animation: none !important;
-  }
-  .progress-fill {
-    transition: none !important;
-  }
+  .rise-in, .float-slow, .goal-leaving, .completion-glow { animation: none !important; }
+  .progress-fill { transition: none !important; }
 }
