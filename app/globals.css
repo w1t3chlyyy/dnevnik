@@ -1,0 +1,160 @@
+@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Токены из Figma */
+:root {
+  --bg: #000000;
+  --card: #171717;
+  --blue: #2f6bff;
+  --blue-deep: #1c4099;
+  --blue-soft: #d6e2ff;
+  --ink: #ffffff;
+  --line: rgba(255, 255, 255, 0.2);
+  --accent: #2f6bff;
+  --accent-2: #d6e2ff;
+  --radius-glass: 34px;
+  --radius-glass-sm: 24px;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+}
+
+/* body прозрачный, иначе он перекроет фон-свечение (AmbientBackground, z-index:-1) */
+body {
+  background: transparent;
+  color: var(--ink);
+  font-family: "Montserrat", -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* контейнер для единиц макета (lib/fx.js) */
+.cq {
+  container-type: inline-size;
+}
+
+.font-display {
+  font-family: "Unbounded", -apple-system, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.font-mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- поверхности (остальные страницы в стиле дашборда) ---------- */
+.glass {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--radius-glass);
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
+}
+.glass-strong {
+  position: relative;
+  background: var(--blue);
+  border-radius: var(--radius-glass);
+  overflow: hidden;
+}
+.glass-sm {
+  border-radius: var(--radius-glass-sm);
+}
+.glass-tap {
+  cursor: pointer;
+}
+.glass-tap:active {
+  transform: scale(0.985);
+}
+.hairline {
+  border-color: var(--line);
+}
+
+/* ---------- анимации ---------- */
+.rise-in {
+  animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.goal-leaving {
+  animation: goal-complete 0.65s cubic-bezier(0.4, 0, 0.2, 1) both;
+  pointer-events: none;
+}
+@keyframes goal-complete {
+  0% { transform: scale(1); opacity: 1; }
+  30% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(0.82); opacity: 0; }
+}
+.completion-glow {
+  position: absolute;
+  inset: -20%;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(214, 226, 255, 0.4) 0%, rgba(214, 226, 255, 0) 70%);
+  animation: ring-pulse 0.8s ease-out;
+  pointer-events: none;
+}
+@keyframes ring-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.06); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.float-slow { animation: float-slow 5s ease-in-out infinite; }
+
+/* ---------- прочее ---------- */
+.progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  width: 100%;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--blue);
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.progress-fill.is-done {
+  background: var(--blue-soft);
+}
+/* на синих панелях трек светлее, а заливка — белая */
+.glass-strong .progress-track { background: rgba(255, 255, 255, 0.25); }
+.glass-strong .progress-fill { background: #fff; }
+
+.nav-item {
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+.chip {
+  border-radius: 999px;
+  border: 0;
+  background: var(--card);
+  transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease;
+}
+.chip:active { transform: scale(0.96); }
+.chip.is-active {
+  background: var(--blue);
+  color: #fff;
+}
+
+::selection { background: rgba(47, 107, 255, 0.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in, .float-slow, .goal-leaving, .completion-glow { animation: none !important; }
+  .progress-fill { transition: none !important; }
+}
