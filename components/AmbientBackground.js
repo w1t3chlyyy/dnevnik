@@ -2,11 +2,11 @@
 // к низу экрана. Контуры и радиусы размытия — 1:1 из слоёв Rectangle 412/413.
 export default function AmbientBackground() {
   return (
-    <div aria-hidden="true" className="fixed inset-0 -z-10 overflow-hidden bg-black pointer-events-none">
+    <div aria-hidden="true" className="fixed inset-y-0 left-1/2 -z-10 w-full max-w-md -translate-x-1/2 overflow-hidden pointer-events-none">
       <svg
         className="absolute inset-0 h-full w-full"
         viewBox="0 0 900 1600"
-        preserveAspectRatio="xMidYMax slice"
+        preserveAspectRatio="xMidYMax meet" style={{ overflow: "visible" }}
       >
         <defs>
           <filter id="glow-a" x="-523" y="0" width="1934" height="1848" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">

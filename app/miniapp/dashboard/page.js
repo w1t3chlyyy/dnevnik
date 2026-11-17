@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { apiGet } from "@/lib/apiClient";
 import ShapeCard from "@/components/ShapeCard";
-import { u, fs, at, box, PAGE_PAD } from "@/lib/fx";
+import { u, fs, at, box, PAGE_PAD, FONT } from "@/lib/fx";
 
 // Контуры карточек — 1:1 из Figma (Rectangle 411 / 417 / 419).
 const PATH_STATS =
@@ -34,7 +34,7 @@ const GRADIENT_TEXT = {
   WebkitTextFillColor: "transparent"
 };
 const display = (n, min, extra = {}) => ({
-  fontFamily: "Unbounded, sans-serif",
+  fontFamily: FONT.unb,
   fontWeight: 500,
   fontSize: fs(n, min),
   lineHeight: "normal",
@@ -48,7 +48,7 @@ const pillBtn = (x, y, bg) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontFamily: "Unbounded, sans-serif",
+  fontFamily: FONT.unb,
   fontWeight: 400,
   fontSize: fs(20, 11),
   color: "#fff"
@@ -160,11 +160,11 @@ export default function Dashboard() {
           </div>
           <div style={at(147, 186, { transform: "translateX(-50%)", fontSize: fs(16, 9), whiteSpace: "nowrap" })}>в среднем</div>
 
-          <div style={at(318, 38, { display: "flex", alignItems: "baseline", gap: u(10), whiteSpace: "nowrap" })}>
+          <div style={at(318, 38, { display: "flex", alignItems: "baseline", gap: u(8), whiteSpace: "nowrap" })}>
             <span style={display(64, 26, { letterSpacing: u(-5.76) })}>{active.length}</span>
             <span style={{ fontSize: fs(20, 11) }}>в работе</span>
           </div>
-          <div style={at(318, 107, { display: "flex", alignItems: "baseline", gap: u(10), whiteSpace: "nowrap" })}>
+          <div style={at(318, 107, { display: "flex", alignItems: "baseline", gap: u(8), whiteSpace: "nowrap" })}>
             <span style={display(64, 26, { letterSpacing: u(-5.76) })}>{completed}</span>
             <span style={{ fontSize: fs(20, 11) }}>достигнуто</span>
           </div>
@@ -212,7 +212,7 @@ export default function Dashboard() {
                 <line x1="567.5" x2="567.5" y1="0" y2="362" />
               </g>
             </svg>
-            <div style={at(404, 99, { fontSize: fs(20, 11), color: "rgba(255,255,255,.8)", whiteSpace: "nowrap" })}>
+            <div style={at(404, 99, { fontSize: fs(20), lineHeight: 0.895, color: "rgba(255,255,255,.8)", whiteSpace: "nowrap" })}>
               {profile ? `из ${profile.target_calories} ккал ${GOAL_LABEL[profile.goal] || ""}` : "профиль не настроен"}
             </div>
             {[
@@ -221,11 +221,11 @@ export default function Dashboard() {
               ["Углеводы", totals?.carbs, 256]
             ].map(([label, val, y]) => (
               <div key={label}>
-                <div style={at(404, y, { fontFamily: "Unbounded, sans-serif", fontWeight: 300, fontSize: fs(20, 11) })}>{label}</div>
+                <div style={at(404, y, { fontFamily: FONT.unb, fontWeight: 300, fontSize: fs(20, 11) })}>{label}</div>
                 <div
                   style={at(630, y, {
                     transform: "translateX(-50%)",
-                    fontFamily: "Unbounded, sans-serif",
+                    fontFamily: FONT.unb,
                     fontWeight: 300,
                     fontSize: fs(20, 11),
                     color: "rgba(255,255,255,.8)"
@@ -276,15 +276,15 @@ export default function Dashboard() {
           {[["0", 240], ["25", 183], ["50", 126], ["75", 69]].map(([t, y]) => (
             <span
               key={t}
-              style={at(623, y, { fontFamily: "Unbounded, sans-serif", fontSize: fs(15, 8), color: "rgba(0,0,0,.5)" })}
+              style={at(623, y, { fontFamily: FONT.unb, fontSize: fs(15, 8), color: "rgba(0,0,0,.5)" })}
             >
               {t}
             </span>
           ))}
-          <span style={at(68, 263, { fontFamily: "Unbounded, sans-serif", fontSize: fs(15, 8), color: "rgba(0,0,0,.5)", whiteSpace: "nowrap" })}>
+          <span style={at(68, 263, { fontFamily: FONT.unb, fontSize: fs(15, 8), color: "rgba(0,0,0,.5)", whiteSpace: "nowrap" })}>
             {chart.from}
           </span>
-          <span style={at(554, 263, { fontFamily: "Unbounded, sans-serif", fontSize: fs(15, 8), color: "rgba(0,0,0,.5)", whiteSpace: "nowrap" })}>
+          <span style={at(554, 263, { fontFamily: FONT.unb, fontSize: fs(15, 8), color: "rgba(0,0,0,.5)", whiteSpace: "nowrap" })}>
             {chart.to}
           </span>
           {!chart.pts.length && (
