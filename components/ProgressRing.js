@@ -29,8 +29,8 @@ export default function ProgressRing({
       <svg width={size} height={size} className="-rotate-90 relative">
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={done ? "#5ee6c8" : "#8b7bff"} />
-            <stop offset="100%" stopColor={done ? "#8ff7d8" : "#5ee6c8"} />
+            <stop offset="0%" stopColor={done ? "#d6e2ff" : "#2f6bff"} />
+            <stop offset="100%" stopColor={done ? "#ffffff" : "#d6e2ff"} />
           </linearGradient>
         </defs>
         <circle

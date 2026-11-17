@@ -252,8 +252,8 @@ export default function GoalsPage() {
     }
   }
 
-  const active = useMemo(() => goals.filter((g) => g.status === "active"), [goals]);
-  const archived = useMemo(() => goals.filter((g) => g.status !== "active"), [goals]);
+  const active = useMemo(() => goals.filter((g) => g.status === "active" && !g.is_daily), [goals]);
+  const archived = useMemo(() => goals.filter((g) => g.status !== "active" && !g.is_daily), [goals]);
 
   return (
     <div className="space-y-5">

@@ -8,8 +8,8 @@ module.exports = {
         "bg-soft": "#0e0e11",
         ink: "#f5f5f3",
         line: "rgba(245, 245, 243, 0.13)",
-        accent: "#8b7bff",
-        "accent-2": "#5ee6c8"
+        accent: "#2f6bff",
+        "accent-2": "#d6e2ff"
       },
       fontFamily: {
         sans: ["Montserrat", "-apple-system", "sans-serif"],

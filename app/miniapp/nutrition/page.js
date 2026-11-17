@@ -9,7 +9,7 @@ import {
 
 const MEAL_LABELS = { breakfast: "Завтрак", lunch: "Обед", dinner: "Ужин", snack: "Перекус" };
 const MEAL_EMOJI = { breakfast: "🍳", lunch: "🍲", dinner: "🍝", snack: "🍎" };
-const MACRO_COLORS = { protein: "#5ee6c8", fat: "#ff9f6e", carbs: "#8b7bff" };
+const MACRO_COLORS = { protein: "#d6e2ff", fat: "#1c4099", carbs: "#2f6bff" };
 
 function CustomTooltip({ active, payload, label, suffix = "" }) {
   if (!active || !payload?.length) return null;
@@ -167,7 +167,7 @@ export default function NutritionPage() {
                     tickLine={false}
                   />
                   <Tooltip content={<CustomTooltip suffix=" ккал" />} cursor={{ fill: "rgba(245,245,243,0.04)" }} />
-                  <Bar dataKey="calories" radius={[6, 6, 0, 0]} fill="#8b7bff" animationDuration={800} />
+                  <Bar dataKey="calories" radius={[6, 6, 0, 0]} fill="#2f6bff" animationDuration={800} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

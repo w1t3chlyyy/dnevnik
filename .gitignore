@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+.env
+.env.*
+!.env.example
+worker/.env
+cookies.txt
+*.log
+.DS_Store
+Thumbs.db
+.idea/
