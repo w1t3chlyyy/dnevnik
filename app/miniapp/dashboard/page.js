@@ -89,15 +89,17 @@ export default function Dashboard() {
   const [data, setData] = useState({});
 
   useEffect(() => {
-    Promise.all([
-      apiGet("/api/user"),
-      apiGet("/api/goals"),
-      apiGet("/api/summary?period=year"),
-      apiGet("/api/nutrition/today"),
-      apiGet("/api/goals/daily")
-    ])
-      .then(([user, goals, summary, food, daily]) => setData({ user, goals, summary, food, daily }))
-      .catch(() => {});
+    [
+      ["user", "/api/user"],
+      ["goals", "/api/goals"],
+      ["summary", "/api/summary?period=year"],
+      ["food", "/api/nutrition/today"],
+      ["daily", "/api/goals/daily"]
+    ].forEach(([key, path]) => {
+      apiGet(path)
+        .then((value) => setData((current) => ({ ...current, [key]: value })))
+        .catch((error) => console.error(`Dashboard: failed to load ${path}`, error));
+    });
   }, []);
 
   const active = useMemo(
@@ -110,23 +112,30 @@ export default function Dashboard() {
   const totals = data.food?.totals;
   const profile = data.food?.profile;
 
-  // ----- график: % выполнения целей дня по дням текущего месяца -----
+  // ----- график: % выполнения целей дня по всем датам, как в аналитике -----
   const chart = useMemo(() => {
     const ymd = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Moscow" }); // YYYY-MM-DD
     const [yy, mm] = ymd.split("-");
     const dim = new Date(Number(yy), Number(mm), 0).getDate();
-    const days = (data.daily?.days || []).filter((d) => d.date?.startsWith(`${yy}-${mm}`));
+    const days = (data.daily?.days || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+    const dayNumber = (date) => {
+      const [year, month, day] = date.split("-").map(Number);
+      return Date.UTC(year, month - 1, day);
+    };
+    const firstDay = days.length ? dayNumber(days[0].date) : 0;
+    const dateSpan = days.length > 1 ? dayNumber(days[days.length - 1].date) - firstDay : 1;
     const pts = days.map((d) => ({
-      x: 68 + ((Number(d.date.slice(8, 10)) - 1) / Math.max(1, dim - 1)) * 550,
+      x: days.length === 1 ? 343 : 68 + ((dayNumber(d.date) - firstDay) / dateSpan) * 550,
       y: Y0 - (d.pct / 100) * 228
     }));
     const avg = days.length ? Math.round(days.reduce((s, d) => s + d.pct, 0) / days.length) : 0;
+    const formatDate = (date) => `${date.slice(8, 10)}.${date.slice(5, 7)}.${date.slice(2, 4)}`;
     return {
       avg,
       pts,
       path: smooth(pts),
-      from: `01.${mm}.${yy.slice(2)}`,
-      to: `${String(dim).padStart(2, "0")}.${mm}.${yy.slice(2)}`
+      from: days.length ? formatDate(days[0].date) : `01.${mm}.${yy.slice(2)}`,
+      to: days.length ? formatDate(days[days.length - 1].date) : `${String(dim).padStart(2, "0")}.${mm}.${yy.slice(2)}`
     };
   }, [data.daily]);
 
