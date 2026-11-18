@@ -7,6 +7,10 @@ import { mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promise
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+const requiredEnv = ["TELEGRAM_BOT_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
+const missingEnv = requiredEnv.filter((name) => !process.env[name]);
+if (missingEnv.length) throw new Error(`Missing required environment variables: ${missingEnv.join(", ")}`);
+
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const db = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 const API = `https://api.telegram.org/bot${TOKEN}`;
@@ -31,7 +35,15 @@ async function tg(method, fields, file) {
   return j.result;
 }
 
-const notify = (id, text) => tg("sendMessage", { chat_id: id, text }).catch(() => {});
+const notify = (id, text) =>
+  tg("sendMessage", { chat_id: id, text }).catch((e) => {
+    console.error("notification failed:", e.message);
+  });
+
+async function heartbeat() {
+  const { error } = await db.from("worker_status").upsert({ id: "media", last_seen_at: new Date().toISOString() });
+  if (error) throw error;
+}
 
 async function downloadFile(fileId, dest) {
   const info = await tg("getFile", { file_id: fileId });
@@ -41,7 +53,9 @@ async function downloadFile(fileId, dest) {
 }
 
 async function deleteCommand(p) {
-  await tg("deleteBusinessMessages", { business_connection_id: p.connection_id, message_ids: [p.command_message_id] }).catch(() => {});
+  await tg("deleteBusinessMessages", { business_connection_id: p.connection_id, message_ids: [p.command_message_id] }).catch((e) => {
+    console.error("deleteBusinessMessages:", e.message);
+  });
 }
 
 // ---------- .circle ----------
@@ -94,14 +108,16 @@ async function save(p, dir) {
 const HANDLERS = { circle, save };
 
 async function claim() {
-  const { data } = await db.from("jobs").select("*").eq("status", "queued").order("created_at").limit(1);
+  const { data, error } = await db.from("jobs").select("*").eq("status", "queued").order("created_at").limit(1);
+  if (error) throw error;
   if (!data?.length) return null;
-  const { data: got } = await db
+  const { data: got, error: claimError } = await db
     .from("jobs")
-    .update({ status: "running", started_at: new Date().toISOString(), attempts: data[0].attempts + 1 })
+    .update({ status: "running", started_at: new Date().toISOString(), attempts: (data[0].attempts || 0) + 1 })
     .eq("id", data[0].id)
     .eq("status", "queued") // защита от гонки, если воркеров несколько
     .select();
+  if (claimError) throw claimError;
   return got?.[0] || null;
 }
 
@@ -109,16 +125,31 @@ async function process_(job) {
   const dir = await mkdtemp(join(tmpdir(), "job-"));
   try {
     await HANDLERS[job.kind](job.payload, dir);
-    await db.from("jobs").update({ status: "done", finished_at: new Date().toISOString() }).eq("id", job.id);
+    const { error } = await db.from("jobs").update({ status: "done", finished_at: new Date().toISOString() }).eq("id", job.id);
+    if (error) throw error;
+    await notify(job.payload.owner_id, `✅ .${job.kind} готово. Отправлено в чат.`);
   } catch (e) {
     console.error(`job ${job.id} (${job.kind}) failed:`, e.message);
-    await db.from("jobs").update({ status: "failed", error: e.message.slice(0, 500), finished_at: new Date().toISOString() }).eq("id", job.id);
+    try {
+      const { error } = await db
+        .from("jobs")
+        .update({ status: "failed", error: e.message.slice(0, 500), finished_at: new Date().toISOString() })
+        .eq("id", job.id);
+      if (error) throw error;
+    } catch (statusError) {
+      console.error(`job ${job.id} status update failed:`, statusError.message);
+    }
     await notify(job.payload.owner_id, `❌ .${job.kind}: ${e.message.slice(0, 300)}`);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
 }
 
+await heartbeat();
+const heartbeatTimer = setInterval(() => {
+  heartbeat().catch((e) => console.error("worker heartbeat failed:", e.message));
+}, 15_000);
+heartbeatTimer.unref();
 console.log("worker started");
 for (;;) {
   try {

@@ -31,7 +31,7 @@ create table if not exists business_chats (
   is_bot boolean default false,
   status text default 'new',                   -- new | selected | ignored
   ai_off boolean default false,                -- .a_gpt_off
-  mute boolean default false,                  -- .a_mute
+  mute boolean default false,                  -- .mute / .a_mute
   owner_replied_at timestamptz,
   first_seen_at timestamptz default now(),
   last_message_at timestamptz default now(),
@@ -50,6 +50,18 @@ create table if not exists business_history (
   unique (user_id, chat_id, message_id)        -- защита от повторной доставки вебхука
 );
 create index if not exists idx_bhist_chat on business_history(user_id, chat_id, id desc);
+
+-- Текст входящих сообщений временно сохраняется, чтобы переслать его владельцу при удалении.
+create table if not exists business_inbox_messages (
+  user_id uuid references users(id) on delete cascade,
+  chat_id bigint not null,
+  message_id bigint not null,
+  content text,
+  created_at timestamptz default now(),
+  primary key (user_id, chat_id, message_id)
+);
+alter table business_inbox_messages add column if not exists content text;
+create index if not exists idx_business_inbox_created on business_inbox_messages(created_at);
 
 -- Общее состояние провайдеров ИИ между serverless-инстансами (кто в «бане» по лимитам)
 create table if not exists ai_provider_state (
@@ -72,3 +84,9 @@ create table if not exists jobs (
   finished_at timestamptz
 );
 create index if not exists idx_jobs_queue on jobs(status, created_at);
+
+-- Heartbeat фонового воркера, чтобы не ставить медиа-задачи в необслуживаемую очередь.
+create table if not exists worker_status (
+  id text primary key,
+  last_seen_at timestamptz not null
+);
