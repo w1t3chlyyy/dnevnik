@@ -68,7 +68,8 @@ const pctOf = (g) => Math.min(100, Math.round((Number(g.current_value) / Number(
 
 // Плавная кривая (Catmull-Rom -> Bezier), значения зажаты в область графика.
 const Y0 = 259; // нулевая линия графика в координатах карточки
-const Y100 = Y0 - 228; // 100% (шаг 25% = 57px, как в макете)
+const Y100 = 101; // оставляем свободное место сверху под крупное значение
+const valueY = (pct) => Y0 - (pct / 100) * (Y0 - Y100);
 const clampY = (y) => Math.max(Y100, Math.min(Y0, y));
 function smooth(pts) {
   if (pts.length < 2) return "";
@@ -126,7 +127,7 @@ export default function Dashboard() {
     const dateSpan = days.length > 1 ? dayNumber(days[days.length - 1].date) - firstDay : 1;
     const pts = days.map((d) => ({
       x: days.length === 1 ? 343 : 68 + ((dayNumber(d.date) - firstDay) / dateSpan) * 550,
-      y: Y0 - (d.pct / 100) * 228
+      y: valueY(d.pct)
     }));
     const avg = days.length ? Math.round(days.reduce((s, d) => s + d.pct, 0) / days.length) : 0;
     const formatDate = (date) => `${date.slice(8, 10)}.${date.slice(5, 7)}.${date.slice(2, 4)}`;
@@ -274,23 +275,23 @@ export default function Dashboard() {
           </div>
           <svg className="absolute inset-0 h-full w-full" viewBox="0 0 687 307" preserveAspectRatio="none" aria-hidden="true">
             <g stroke="#000" strokeOpacity="0.2">
-              <line x1="68" x2="618" y1="88.5" y2="88.5" />
-              <line x1="68" x2="618" y1="145.5" y2="145.5" />
-              <line x1="68" x2="618" y1="202.5" y2="202.5" />
+              {[25, 50, 75].map((pct) => (
+                <line key={pct} x1="68" x2="618" y1={valueY(pct)} y2={valueY(pct)} />
+              ))}
             </g>
             <g stroke="#000" strokeOpacity="0.5" strokeWidth="4">
               <line x1="68" x2="618" y1="259" y2="259" />
-              <line x1="618" x2="618" y1="28" y2="259" />
+              <line x1="618" x2="618" y1={Y100} y2="259" />
             </g>
             {chart.path && <path key={chart.path} d={chart.path} stroke={BLUE} strokeWidth="4" fill="none" />}
             {chart.pts.length === 1 && <circle cx={chart.pts[0].x} cy={chart.pts[0].y} r="6" fill={BLUE} />}
           </svg>
-          {[["0", 240], ["25", 183], ["50", 126], ["75", 69]].map(([t, y]) => (
+          {[0, 25, 50, 75].map((pct) => (
             <span
-              key={t}
-              style={at(623, y, { fontFamily: FONT.unb, fontSize: fs(15, 8), color: "rgba(0,0,0,.5)" })}
+              key={pct}
+              style={at(623, valueY(pct) - 19, { fontFamily: FONT.unb, fontSize: fs(15, 8), color: "rgba(0,0,0,.5)" })}
             >
-              {t}
+              {pct}
             </span>
           ))}
           <span style={at(68, 263, { fontFamily: FONT.unb, fontSize: fs(15, 8), color: "rgba(0,0,0,.5)", whiteSpace: "nowrap" })}>
