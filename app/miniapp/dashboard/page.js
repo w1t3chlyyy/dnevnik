@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { apiGet } from "@/lib/apiClient";
 import ShapeCard from "@/components/ShapeCard";
-import { u, fs, at, box, PAGE_PAD, FONT } from "@/lib/fx";
+import { u, fs, at, box, FONT } from "@/lib/fx";
 
 // Контуры карточек — 1:1 из Figma (Rectangle 411 / 417 / 419).
 const PATH_STATS =
@@ -134,7 +134,8 @@ export default function Dashboard() {
   const C = 2 * Math.PI * R;
 
   return (
-    <div className="-mx-5" style={{ paddingInline: PAGE_PAD, paddingTop: "calc(min(100vw, 448px) * 0.1556 - 2rem)" }}>
+    // Боковые поля — из layout (px-5), как на остальных страницах.
+    <div style={{ paddingTop: "calc(min(100vw, 448px) * 0.1556 - 2rem)" }}>
       <div className="cq flex flex-col" style={{ gap: u(23.5) }}>
         <h1 className="rise-in break-words" style={display(48, 20, { whiteSpace: "normal", marginBottom: u(1) })}>
           {greeting(data.user?.first_name)}
@@ -239,7 +240,10 @@ export default function Dashboard() {
           <Link href="/miniapp/nutrition" style={pillBtn(6, 271, BLUE)}>Питание</Link>
         </ShapeCard>
 
-        {/* ---------- карточка 3: график ---------- */}
+        {/* ---------- карточка 3: график ----------
+            Без анимации rise-in: карточка лежит ниже экрана, и в WebView Telegram
+            анимация такого элемента зависала на opacity:0, пока не нажмёшь.
+            translateZ(0) — отдельный слой, чтобы график перерисовывался вместе с данными. */}
         <ShapeCard
           as={Link}
           href="/miniapp/charts"
@@ -247,8 +251,7 @@ export default function Dashboard() {
           h={307}
           d={PATH_CHART}
           fill="#fff"
-          className="rise-in"
-          style={{ animationDelay: "180ms" }}
+          style={{ transform: "translateZ(0)" }}
         >
           <div style={{ ...box(0, 0, 300, 106), background: "#fff", borderRadius: u(50) }} />
           <div
@@ -270,7 +273,7 @@ export default function Dashboard() {
               <line x1="68" x2="618" y1="259" y2="259" />
               <line x1="618" x2="618" y1="28" y2="259" />
             </g>
-            {chart.path && <path d={chart.path} stroke={BLUE} strokeWidth="4" fill="none" />}
+            {chart.path && <path key={chart.path} d={chart.path} stroke={BLUE} strokeWidth="4" fill="none" />}
             {chart.pts.length === 1 && <circle cx={chart.pts[0].x} cy={chart.pts[0].y} r="6" fill={BLUE} />}
           </svg>
           {[["0", 240], ["25", 183], ["50", 126], ["75", 69]].map(([t, y]) => (

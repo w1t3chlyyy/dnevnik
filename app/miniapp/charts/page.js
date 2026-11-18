@@ -8,7 +8,7 @@ import {
 } from "recharts";
 
 const ALL = "__all__";
-const PALETTE = ["#8b7bff", "#5ee6c8", "#ff9f6e", "#ff8bd6", "#7fd1ff", "#f4e07a"];
+const PALETTE = ["#2f6bff", "#ffffff", "#1c4099", "#d6e2ff", "#d6e2ff", "#2f6bff"];
 
 function CustomTooltip({ active, payload, label, suffix = "" }) {
   if (!active || !payload?.length) return null;
@@ -187,8 +187,8 @@ export default function ChartsPage() {
                 <AreaChart data={activeData} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
                   <defs>
                     <linearGradient id="fillTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={isAll ? "#8b7bff" : "#5ee6c8"} stopOpacity={0.45} />
-                      <stop offset="100%" stopColor={isAll ? "#8b7bff" : "#5ee6c8"} stopOpacity={0} />
+                      <stop offset="0%" stopColor={isAll ? "#2f6bff" : "#ffffff"} stopOpacity={0.45} />
+                      <stop offset="100%" stopColor={isAll ? "#2f6bff" : "#ffffff"} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="rgba(245,245,243,0.08)" vertical={false} />
@@ -208,7 +208,7 @@ export default function ChartsPage() {
                   <Area
                     type="monotone"
                     dataKey="total"
-                    stroke={isAll ? "#8b7bff" : "#5ee6c8"}
+                    stroke={isAll ? "#2f6bff" : "#ffffff"}
                     strokeWidth={2.5}
                     fill="url(#fillTotal)"
                     animationDuration={900}
@@ -245,7 +245,7 @@ export default function ChartsPage() {
                   <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ fill: "rgba(245,245,243,0.04)" }} />
                   <Bar dataKey="pct" radius={[8, 8, 8, 8]} animationDuration={800} barSize={14}>
                     {snapshot.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.done ? "#5ee6c8" : PALETTE[idx % PALETTE.length]} />
+                      <Cell key={idx} fill={entry.done ? "#ffffff" : PALETTE[idx % PALETTE.length]} />
                     ))}
                     <LabelList
                       dataKey="pct"
@@ -295,7 +295,7 @@ export default function ChartsPage() {
                     tickLine={false}
                   />
                   <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ fill: "rgba(245,245,243,0.04)" }} />
-                  <Bar dataKey="pct" radius={[6, 6, 0, 0]} fill="#5ee6c8" animationDuration={800} />
+                  <Bar dataKey="pct" radius={[6, 6, 0, 0]} fill="#ffffff" animationDuration={800} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
