@@ -274,17 +274,24 @@ export default function Dashboard() {
             {chart.avg}%
           </div>
           <svg className="absolute inset-0 h-full w-full" viewBox="0 0 687 307" preserveAspectRatio="none" aria-hidden="true">
-            <g stroke="#000" strokeOpacity="0.2">
-              {[25, 50, 75].map((pct) => (
-                <line key={pct} x1="68" x2="618" y1={valueY(pct)} y2={valueY(pct)} />
-              ))}
+            <defs>
+              <clipPath id="dashboard-chart-clip">
+                <path d={PATH_CHART} />
+              </clipPath>
+            </defs>
+            <g clipPath="url(#dashboard-chart-clip)">
+              <g stroke="#000" strokeOpacity="0.2">
+                {[25, 50, 75].map((pct) => (
+                  <line key={pct} x1="68" x2="618" y1={valueY(pct)} y2={valueY(pct)} />
+                ))}
+              </g>
+              <g stroke="#000" strokeOpacity="0.5" strokeWidth="4">
+                <line x1="68" x2="618" y1="259" y2="259" />
+                <line x1="618" x2="618" y1={Y100} y2="259" />
+              </g>
+              {chart.path && <path key={chart.path} d={chart.path} stroke={BLUE} strokeWidth="4" fill="none" />}
+              {chart.pts.length === 1 && <circle cx={chart.pts[0].x} cy={chart.pts[0].y} r="6" fill={BLUE} />}
             </g>
-            <g stroke="#000" strokeOpacity="0.5" strokeWidth="4">
-              <line x1="68" x2="618" y1="259" y2="259" />
-              <line x1="618" x2="618" y1={Y100} y2="259" />
-            </g>
-            {chart.path && <path key={chart.path} d={chart.path} stroke={BLUE} strokeWidth="4" fill="none" />}
-            {chart.pts.length === 1 && <circle cx={chart.pts[0].x} cy={chart.pts[0].y} r="6" fill={BLUE} />}
           </svg>
           {[0, 25, 50, 75].map((pct) => (
             <span
